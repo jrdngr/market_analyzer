@@ -1,14 +1,18 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, path::Path};
 
+use chrono::Utc;
 use rust_decimal::Decimal;
 
 pub mod td;
+
+const REPORT_PATH: &str = "reports";
+const SYMBOL: &str = "SPY";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv()?;
 
-    let options = td::get_option_chain("SPY").await?;
+    let options = td::get_option_chain(SYMBOL).await?;
 
     let mut call_exposure = 0.0;
     let mut call_count = 0;
@@ -50,11 +54,19 @@ async fn main() -> anyhow::Result<()> {
     let average_exposure = (call_exposure.abs() + put_exposure.abs()) / (price_gamma_exposure.len() as f64);
     
     println!("----------------------------------------------------");
+    let mut csv = String::new();
     for (strike, exposure) in price_gamma_exposure {
         if exposure.abs() >= average_exposure {
+            csv.push_str(&format!("{}, {}\n", strike, exposure));
             println!("{}: {}", strike, exposure);
         }
     }
+    std::fs::create_dir_all(REPORT_PATH)?;
+    let file_date = Utc::now().format("%Y%m%d").to_string();
+    let file_path = format!("{}/{}_{}.csv", REPORT_PATH, SYMBOL, file_date);
+    let path = Path::new(&file_path);
+
+    std::fs::write(&path, csv)?;
 
     println!("----------------------------------------------------");
     println!("Average call exposure: {}", average_call_exposure);
