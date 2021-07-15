@@ -1,84 +1,43 @@
+pub mod gamma_exposure;
 pub mod td;
 pub mod utils;
 
-use std::{collections::BTreeMap, path::Path};
+use std::convert::Infallible;
 
-use chrono::Utc;
-use rust_decimal::Decimal;
-
-const REPORT_PATH: &str = "reports";
-const SYMBOL: &str = "XLF";
+use warp::{Filter, Rejection, http::StatusCode};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenv::dotenv()?;
+    pretty_env_logger::init();
 
-    let options = td::get_option_chain(SYMBOL).await?;
+    let gamma_exposure = warp::get()
+        .and(warp::path!("gamma" / String))
+        .and_then(gamma_exposure);
 
-    let mut call_exposure = 0.0;
-    let mut call_count = 0;
-    let mut put_exposure = 0.0;
-    let mut put_count = 0;
-    let mut price_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_methods(vec!["GET", "POST", "PUT"]);
 
-    for contracts in options.call_exp_date_map.values() {
-        for (strike, options) in contracts {
-            for option in options {
-                let exposure = option.gamma * option.open_interest;
-                call_exposure += exposure;
-                call_count += 1;
-                match price_gamma_exposure.get_mut(strike) {
-                    Some(exp) => *exp += exposure,
-                    None => {
-                        price_gamma_exposure.insert(*strike, exposure);
-                    }
-                }
-            }
-        }
-    }
-    for contracts in options.put_exp_date_map.values() {
-        for (strike, options) in contracts {
-            for option in options {
-                let exposure = option.gamma * option.open_interest * -1.0;
-                put_exposure += exposure;
-                put_count += 1;
-                match price_gamma_exposure.get_mut(strike) {
-                    Some(exp) => *exp += exposure,
-                    None => {
-                        price_gamma_exposure.insert(*strike, exposure);
-                    }
-                }
-            }
-        }
-    }
+    let routes = gamma_exposure;
 
-    let total_exposure = call_exposure + put_exposure;
-    let average_call_exposure = call_exposure / (call_count as f64);
-    let average_put_exposure = put_exposure / (put_count as f64);
-    let average_exposure =
-        (call_exposure.abs() + put_exposure.abs()) / (price_gamma_exposure.len() as f64);
-
-    println!("----------------------------------------------------");
-    let mut csv = String::new();
-    for (strike, exposure) in price_gamma_exposure {
-        if exposure.abs() >= average_exposure {
-            csv.push_str(&format!("{}, {}\n", strike, exposure));
-            println!("{}: {}", strike, exposure);
-        }
-    }
-    std::fs::create_dir_all(REPORT_PATH)?;
-    let file_date = Utc::now().format("%Y%m%d").to_string();
-    let file_path = format!("{}/{}_{}.csv", REPORT_PATH, SYMBOL, file_date);
-    let path = Path::new(&file_path);
-
-    std::fs::write(&path, csv)?;
-
-    println!("----------------------------------------------------");
-    println!("Average call exposure: {}", average_call_exposure);
-    println!("Average put exposure: {}", average_put_exposure);
-    println!("Average overall exposure: {}", average_exposure);
-    println!("Total gamma exposure: {}", total_exposure);
-    println!("----------------------------------------------------");
+    warp::serve(routes.recover(handle_rejection).with(cors))
+        .run(([127, 0, 0, 1], 3030))
+        .await;
 
     Ok(())
+}
+
+async fn gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejection> {
+    match gamma_exposure::gamma_exposure_by_price(&symbol).await {
+        Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
+        Err(_) => Err(warp::reject::not_found()), 
+    }
+}
+
+async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infallible> {
+    log::error!("{:?}", err);
+    Ok(warp::reply::with_status(
+        format!("{:?}", err),
+        StatusCode::INTERNAL_SERVER_ERROR,
+    ))
 }
