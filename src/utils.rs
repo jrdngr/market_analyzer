@@ -4,7 +4,7 @@ use serde::{Deserialize, Deserializer};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(untagged)]
-pub enum FloatOrString{
+pub enum FloatOrString {
     Float(f64),
     String(String),
 }
@@ -26,10 +26,16 @@ impl TryFrom<FloatOrString> for f64 {
     }
 }
 
-pub fn deserialize_f64_with_nan<'de, D>(deserializer: D) -> Result<f64, D::Error> where D: Deserializer<'de> {
+pub fn deserialize_f64_with_nan<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: Deserializer<'de>,
+{
     let value: FloatOrString = Deserialize::deserialize(deserializer)?;
     match f64::try_from(value) {
         Ok(value) => Ok(value),
-        Err(string) => Err(serde::de::Error::custom(format!("Invalid string: {}", string))),
-    } 
+        Err(string) => Err(serde::de::Error::custom(format!(
+            "Invalid string: {}",
+            string
+        ))),
+    }
 }

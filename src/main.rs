@@ -29,7 +29,9 @@ async fn main() -> anyhow::Result<()> {
                 call_count += 1;
                 match price_gamma_exposure.get_mut(strike) {
                     Some(exp) => *exp += exposure,
-                    None => { price_gamma_exposure.insert(strike.clone(), exposure); },
+                    None => {
+                        price_gamma_exposure.insert(*strike, exposure);
+                    }
                 }
             }
         }
@@ -42,9 +44,10 @@ async fn main() -> anyhow::Result<()> {
                 put_count += 1;
                 match price_gamma_exposure.get_mut(strike) {
                     Some(exp) => *exp += exposure,
-                    None => { price_gamma_exposure.insert(strike.clone(), exposure); },
+                    None => {
+                        price_gamma_exposure.insert(*strike, exposure);
+                    }
                 }
-
             }
         }
     }
@@ -52,8 +55,9 @@ async fn main() -> anyhow::Result<()> {
     let total_exposure = call_exposure + put_exposure;
     let average_call_exposure = call_exposure / (call_count as f64);
     let average_put_exposure = put_exposure / (put_count as f64);
-    let average_exposure = (call_exposure.abs() + put_exposure.abs()) / (price_gamma_exposure.len() as f64);
-    
+    let average_exposure =
+        (call_exposure.abs() + put_exposure.abs()) / (price_gamma_exposure.len() as f64);
+
     println!("----------------------------------------------------");
     let mut csv = String::new();
     for (strike, exposure) in price_gamma_exposure {
