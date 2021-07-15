@@ -10,28 +10,29 @@ const DATA_PATH: &str = "data";
 const API_KEY_ENV: &str = "API_KEY";
 const OPTION_CHAIN_URL: &str = "https://api.tdameritrade.com/v1/marketdata/chains";
 
-pub async fn get_option_chain(symbol: &str) -> anyhow::Result<OptionChain> {
+pub async fn get_option_chain(symbol: &str, force_download: bool) -> anyhow::Result<OptionChain> {
     let file_date = Utc::now().format("%Y%m%d").to_string();
     let file_path = format!("{}/{}_{}.json", DATA_PATH, symbol, file_date);
-    let path = Path::new(&file_path);
+    let data_path = Path::new(&file_path);
 
-    let body = if path.exists() {
-        std::fs::read_to_string(&path)?
+    if data_path.exists() && !force_download {
+        let json = std::fs::read_to_string(&data_path)?;
+        Ok(serde_json::from_str(&json)?)
     } else {
-        println!("Downloading today's {} data", symbol);
-        let api_key = std::env::var(API_KEY_ENV)?;
-        let params = format!("apikey={}&symbol={}", api_key, symbol);
-        let url = format!("{}?{}", OPTION_CHAIN_URL, params);
+        download_data(symbol, data_path).await
+    }
+}
 
-        let body = reqwest::get(url).await?.text().await?;
+async fn download_data(symbol: &str, data_path: &Path) -> anyhow::Result<OptionChain> {
+    println!("Downloading today's {} data", symbol);
+    let api_key = std::env::var(API_KEY_ENV)?;
+    let params = format!("apikey={}&symbol={}", api_key, symbol);
+    let url = format!("{}?{}", OPTION_CHAIN_URL, params);
 
-        std::fs::create_dir_all(DATA_PATH)?;
-        std::fs::write(&path, &body)?;
+    let body = reqwest::get(url).await?.text().await?;
 
-        body
-    };
+    std::fs::create_dir_all(DATA_PATH)?;
+    std::fs::write(&data_path, &body)?;
 
-    let result = serde_json::from_str(&body)?;
-
-    Ok(result)
+    Ok(serde_json::from_str(&body)?)
 }

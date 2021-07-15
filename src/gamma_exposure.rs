@@ -7,10 +7,10 @@ use crate::td;
 
 const REPORT_PATH: &str = "reports";
 
-pub async fn gamma_exposure_by_price(symbol: &str) -> anyhow::Result<BTreeMap<Decimal, f64>> {
+pub async fn gamma_exposure_by_price(symbol: &str, force_download: bool) -> anyhow::Result<BTreeMap<Decimal, f64>> {
     dotenv::dotenv()?;
 
-    let options = td::get_option_chain(symbol).await?;
+    let options = td::get_option_chain(symbol, force_download).await?;
 
     let mut price_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
 
@@ -44,10 +44,10 @@ pub async fn gamma_exposure_by_price(symbol: &str) -> anyhow::Result<BTreeMap<De
     Ok(price_gamma_exposure)
 }
 
-pub async fn print_gamma_exposure_by_price(symbol: &str) -> anyhow::Result<()> {
+pub async fn print_gamma_exposure_by_price(symbol: &str, force_download: bool) -> anyhow::Result<()> {
     dotenv::dotenv()?;
 
-    let options = td::get_option_chain(symbol).await?;
+    let options = td::get_option_chain(symbol, force_download).await?;
 
     let mut call_exposure = 0.0;
     let mut call_count = 0;
