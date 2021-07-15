@@ -1,12 +1,13 @@
+pub mod td;
+pub mod utils;
+
 use std::{collections::BTreeMap, path::Path};
 
 use chrono::Utc;
 use rust_decimal::Decimal;
 
-pub mod td;
-
 const REPORT_PATH: &str = "reports";
-const SYMBOL: &str = "SPY";
+const SYMBOL: &str = "XLF";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
