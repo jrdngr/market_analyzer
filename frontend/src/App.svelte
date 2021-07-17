@@ -1,5 +1,7 @@
 <script>
     import GammaExposure from './components/GammaExposure.svelte'
+    import {  GetOptionChain, StoreApiKey } from './common/td';
+    import { GammaExposureByPrice } from './common/math/gammaExposure';
 
     let symbol = null;
     let minStrike = 0;
@@ -8,9 +10,13 @@
     let reducedData = null;
     let percentileFilter = 0.3;
 
+    let apiKey = "";
+
     async function handleSubmit() {
         console.log("Fetching data");
-        data = await (await fetch(`http://localhost:3030/gamma/${symbol}`)).json();
+        const optionChain = await GetOptionChain("SPY");
+        console.log(optionChain);
+        data = GammaExposureByPrice(optionChain);
         console.log(data);
         minStrike = Math.min(...data.prices.map(d => d.strike));
         maxStrike = Math.max(...data.prices.map(d => d.strike));
@@ -18,6 +24,10 @@
 	}
 
     function updateStrikes() {
+        setData(data);
+    }
+
+    function updatePercentileFilter() {
         setData(data);
     }
 
@@ -30,8 +40,8 @@
             .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
             
         reducedData.forEach(d => {
-            if (Math.abs(d.gamma_exposure) < data.absolute_maximum * percentileFilter) {
-                d.gamma_exposure = 0;
+            if (Math.abs(d.gammaExposure) < data.absoluteMaximum * percentileFilter) {
+                d.gammaExposure = 0;
             }
         });
 
@@ -39,32 +49,45 @@
         maxStrike = Math.max(...reducedData.map(d => d.strike));
     }
 
+    function handleSaveApiKey() {
+        StoreApiKey(apiKey);
+        apiKey = "";
+    }
+
 </script>
 
 <main>
-    Symbol:
-    <input bind:value={symbol}>
-    <button on:click={handleSubmit}>
-        Submit
-    </button>
-    Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:change={updateStrikes}>
-    Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:change={updateStrikes}>
-    Percentile Filter: <input 
-        type=number 
-        bind:value={percentileFilter} 
-        min=0.0 
-        max=1.0 
-        step=0.01
-        on:change={updateStrikes}
-    >
-
+    <div class="controls">
+        Symbol:
+        <input bind:value={symbol}>
+        <button on:click={handleSubmit}>
+            Submit
+        </button>
+        Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:change={updateStrikes}>
+        Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:change={updateStrikes}>
+        Percentile Filter: <input 
+            type=number 
+            bind:value={percentileFilter} 
+            min=0.0 
+            max=1.0 
+            step=0.01
+            on:change={updatePercentileFilter}
+        >
+    </div>
     {#if data}
         <GammaExposure bind:data={reducedData}/>
     {/if}
+
+    <div>
+        API Key: <input class="apikey" bind:value={apiKey} />
+        <button on:click={handleSaveApiKey}>
+            Save
+        </button>
+    </div>
 </main>
 
 <style>
-    input {
+    .controls input {
         width: 100px;
     }
 </style>

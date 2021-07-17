@@ -21,7 +21,7 @@
             .padding(0.2);
 
         const y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => Math.abs(d.gamma_exposure))])
+            .domain([0, d3.max(data, d => Math.abs(d.gammaExposure))])
             .range([height - margin.bottom, margin.top]);
 
         const xAxis = g => g
@@ -41,17 +41,17 @@
             .data(data)
             .join("rect")
             .attr("x", d => x(d.strike))
-            .attr("y", d => y(Math.abs(d.gamma_exposure)))
-            .attr("height", d => y(0) - y(Math.abs(d.gamma_exposure)))
+            .attr("y", d => y(Math.abs(d.gammaExposure)))
+            .attr("height", d => y(0) - y(Math.abs(d.gammaExposure)))
             .attr("width", x.bandwidth())
-            .attr("fill", d => d.gamma_exposure >= 0 ? "steelblue" : "tomato");
+            .attr("fill", d => d.gammaExposure >= 0 ? "steelblue" : "tomato");
 
         svg.append("g")
             .call(xAxis)
             .selectAll("text")
             .data(data)
             .attr("transform", "translate(25,25) rotate(60)")
-            .attr("fill", d => d.gamma_exposure === 0 ? "transparent" : "white")
+            .attr("fill", d => d.gammaExposure === 0 ? "transparent" : "white")
             .attr("font-size", "2em");
 
         svg.append("g")
