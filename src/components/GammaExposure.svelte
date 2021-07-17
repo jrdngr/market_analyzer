@@ -8,8 +8,8 @@
 
 	beforeUpdate(() => {
         const margin = ({top: 20, right: 0, bottom: 70, left: 70})
-        const width = 1280;
-        const height = 800;
+        const width = 800;
+        const height = 500;
 
         el.textContent = "";
 
@@ -50,15 +50,15 @@
             .call(xAxis)
             .selectAll("text")
             .data(data)
-            .attr("transform", "translate(25,25) rotate(60)")
+            .attr("transform", "translate(12,25) rotate(90)")
             .attr("fill", d => d.gammaExposure === 0 ? "transparent" : "white")
-            .attr("font-size", "2em");
+            .attr("font-size", "1em");
 
         svg.append("g")
             .call(yAxis)
             .selectAll("text")
             .attr("fill", "white")
-            .attr("font-size", "2em");
+            .attr("font-size", "1em");
 
         el.append(svg.node());
     });

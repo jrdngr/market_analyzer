@@ -74,12 +74,15 @@
             on:change={updatePercentileFilter}
         >
     </div>
-    {#if data}
-        <GammaExposure bind:data={reducedData}/>
-    {/if}
 
-    <div>
-        API Key: <input class="apikey" bind:value={apiKey} />
+    <div class="charts">
+        {#if data}
+            <GammaExposure bind:data={reducedData}/>
+        {/if}
+    </div>
+
+    <div class="apikey">
+        API Key: <input bind:value={apiKey} />
         <button on:click={handleSaveApiKey}>
             Save
         </button>
@@ -89,5 +92,13 @@
 <style>
     .controls input {
         width: 100px;
+    }
+
+    .charts {
+        width: 30%;
+    }
+
+    .apikey {
+        margin-top: 100px;
     }
 </style>
