@@ -107,8 +107,8 @@ pub struct OptionData {
     pub option_deliverables_list: Option<Vec<OptionDeliverables>>,
     #[serde(deserialize_with = "deserialize_f64_with_nan")]
     pub strike_price: f64,
-    pub expiration_date: u64,
-    pub days_to_expiration: u64,
+    pub expiration_date: i64,
+    pub days_to_expiration: i64,
     pub expiration_type: String,
     pub last_trading_day: u64,
     #[serde(deserialize_with = "deserialize_f64_with_nan")]

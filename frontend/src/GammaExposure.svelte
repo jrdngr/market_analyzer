@@ -17,7 +17,8 @@
 
         const x = d3.scaleBand()
             .domain(data.map(d => d.strike))
-            .rangeRound([margin.left, width - margin.right]);
+            .rangeRound([margin.left, width - margin.right])
+            .padding(0.1);
 
         const y = d3.scaleLinear()
             .domain([0, d3.max(data, d => Math.abs(d.gamma_exposure))])

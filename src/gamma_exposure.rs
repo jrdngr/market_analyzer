@@ -14,6 +14,9 @@ pub struct GammaExposureStats {
     pub average_absolute_exposure: f64,
     pub average_positive_exposure: f64,
     pub average_negative_exposure: f64,
+    pub maximum: f64,
+    pub minimum: f64,
+    pub absolute_maximum: f64,
 }
 
 impl GammaExposureStats {
@@ -23,6 +26,9 @@ impl GammaExposureStats {
         let mut positive_count = 0;
         let mut negative_sum: f64 = 0.0;
         let mut negative_count = 0;
+        let mut maximum: f64 = 0.0;
+        let mut minimum: f64 = 0.0;
+        let mut absolute_maximum: f64 = 0.0;
 
         for (_, exposure) in strike_to_gamma_exposure {
             if *exposure >= 0.0 {
@@ -32,6 +38,9 @@ impl GammaExposureStats {
                 negative_sum += exposure;
                 negative_count += 1;
             }
+            maximum = maximum.max(*exposure);
+            minimum = minimum.min(*exposure);
+            absolute_maximum = absolute_maximum.max(exposure.abs());
         }
 
         positive_count = positive_count.max(1);
@@ -53,6 +62,9 @@ impl GammaExposureStats {
             average_absolute_exposure,
             average_positive_exposure,
             average_negative_exposure,
+            maximum,
+            minimum,
+            absolute_maximum,
         }
     }
 }

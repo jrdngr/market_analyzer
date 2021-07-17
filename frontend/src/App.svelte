@@ -6,7 +6,7 @@
     let maxStrike = 0;
     let data = null;
     let reducedData = null;
-    let onlyExtremeValues = false;
+    let percentileFilter = 0.00;
 
     async function handleSubmit() {
         console.log("Fetching data");
@@ -23,7 +23,10 @@
     function setData(data) {
         reducedData = data.prices
             .filter(d => d.strike >= minStrike && d.strike <= maxStrike)
-            .filter(d => onlyExtremeValues ? Math.abs( d.gamma_exposure) >= data.average_absolute_exposure : true);
+            .filter(d => Math.abs(d.gamma_exposure) >= data.absolute_maximum * percentileFilter);
+
+        minStrike = Math.min(...reducedData.map(d => d.strike));
+        maxStrike = Math.max(...reducedData.map(d => d.strike));
     }
 
 </script>
@@ -36,7 +39,14 @@
     </button>
     Min Strike: <input type=number bind:value={minStrike} min=0 on:input={updateStrikes}>
     Max Strike: <input type=number bind:value={maxStrike} min=0 on:input={updateStrikes}>
-    Extreme Values: <input type=checkbox bind:checked={onlyExtremeValues} on:change={updateStrikes}>
+    Percentile Filter: <input 
+        type=number 
+        bind:value={percentileFilter} 
+        min=0.0 
+        max = 1.0 
+        step = 0.01
+        on:input={updateStrikes}
+    >
 
     {#if data}
         <GammaExposure bind:data={reducedData}/>

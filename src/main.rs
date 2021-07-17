@@ -45,12 +45,14 @@ async fn handle_gamma_exposure(
 ) -> Result<impl warp::Reply, Rejection> {
     match gamma_exposure::gamma_exposure_by_price(&symbol, force_download).await {
         Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
-        Err(_) => Err(warp::reject::not_found()),
+        Err(err) => {
+            log::error!("{:?}", err);
+            Err(warp::reject::not_found())
+        },
     }
 }
 
 async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infallible> {
-    log::error!("{:?}", err);
     Ok(warp::reply::with_status(
         format!("{:?}", err),
         StatusCode::INTERNAL_SERVER_ERROR,
