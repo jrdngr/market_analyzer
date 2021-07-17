@@ -22,9 +22,16 @@
     }
 
     function setData(data) {
-        reducedData = data.prices
-            .filter(d => d.strike >= minStrike && d.strike <= maxStrike)
-            .filter(d => Math.abs(d.gamma_exposure) >= data.absolute_maximum * percentileFilter);
+        reducedData = Object.assign({}, data);
+        reducedData = reducedData.prices
+            .map(d => Object.assign({}, d))
+            .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
+            
+        reducedData.forEach(d => {
+            if (Math.abs(d.gamma_exposure) < data.absolute_maximum * percentileFilter) {
+                d.gamma_exposure = 0;
+            }
+        });
 
         minStrike = Math.min(...reducedData.map(d => d.strike));
         maxStrike = Math.max(...reducedData.map(d => d.strike));
@@ -38,14 +45,14 @@
     <button on:click={handleSubmit}>
         Submit
     </button>
-    Min Strike: <input type=number bind:value={minStrike} min=0 on:input={updateStrikes}>
-    Max Strike: <input type=number bind:value={maxStrike} min=0 on:input={updateStrikes}>
+    Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:input={updateStrikes}>
+    Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:input={updateStrikes}>
     Percentile Filter: <input 
         type=number 
         bind:value={percentileFilter} 
         min=0.0 
-        max = 1.0 
-        step = 0.01
+        max=1.0 
+        step=0.01
         on:input={updateStrikes}
     >
 
