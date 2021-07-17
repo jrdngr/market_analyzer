@@ -46,13 +46,10 @@
             .attr("width", x.bandwidth())
             .attr("fill", d => d.gamma_exposure >= 0 ? "steelblue" : "tomato");
 
-        svg.selectAll("g")
-            .selectAll("text")
-            .attr("transform", "rotate(90)")
-            .style("fill", "white");
-
         svg.append("g")
-            .call(xAxis);
+            .call(xAxis)
+            .selectAll("text")
+            .attr("transform", "translate(15,25) rotate(90)");
 
         svg.append("g")
             .call(yAxis);

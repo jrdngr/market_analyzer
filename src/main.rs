@@ -48,7 +48,7 @@ async fn handle_gamma_exposure(
         Err(err) => {
             log::error!("{:?}", err);
             Err(warp::reject::not_found())
-        },
+        }
     }
 }
 
