@@ -1,104 +1,47 @@
 <script>
-    import GammaExposure from './components/GammaExposure.svelte'
-    import {  GetOptionChain, StoreApiKey } from './common/td';
-    import { GammaExposureByPrice } from './common/math/gammaExposure';
+    import { Router, Route } from "svelte-routing";
+    import { clientId, storeClientId } from './common/td';
+    import Auth from './components/Auth.svelte';
+    import GammaExposure from './components/GammaExposure.svelte';
 
-    let symbol = null;
-    let minStrike = 0;
-    let maxStrike = 0;
-    let data = null;
-    let reducedData = null;
-    let percentileFilter = 0.3;
+    export let url = "";
+    
+    let clientIdText = "";
 
-    let apiKey = "";
-
-    async function handleSubmit() {
-        console.log("Fetching data");
-        const optionChain = await GetOptionChain("SPY");
-        console.log(optionChain);
-        data = GammaExposureByPrice(optionChain);
-        console.log(data);
-        minStrike = Math.min(...data.prices.map(d => d.strike));
-        maxStrike = Math.max(...data.prices.map(d => d.strike));
-        setData(data);
-	}
-
-    function updateStrikes() {
-        setData(data);
+    function handleSaveClientId() {
+        storeClientId(clientIdText);
+        clientIdText = "";
     }
 
-    function updatePercentileFilter() {
-        setData(data);
-    }
-
-    function setData(data) {
-        reducedData = Object.assign({}, data);
-
-        // Trim leading and trailer GE = 0
-        reducedData = reducedData.prices
-            .map(d => Object.assign({}, d))
-            .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
-            
-        reducedData.forEach(d => {
-            if (Math.abs(d.gammaExposure) < data.absoluteMaximum * percentileFilter) {
-                d.gammaExposure = 0;
-            }
-        });
-
-        minStrike = Math.min(...reducedData.map(d => d.strike));
-        maxStrike = Math.max(...reducedData.map(d => d.strike));
-    }
-
-    function handleSaveApiKey() {
-        StoreApiKey(apiKey);
-        apiKey = "";
+    function handleLogin() {
+        const redirect_uri = encodeURIComponent("https://localhost:5000/auth");
+        const url = `https://auth.tdameritrade.com/auth?response_type=code&redirect_uri=${redirect_uri}&client_id=${clientId()}%40AMER.OAUTHAP`;
+        window.location.href = url;
     }
 
 </script>
-
-<main>
-    <div class="controls">
-        Symbol:
-        <input bind:value={symbol}>
-        <button on:click={handleSubmit}>
-            Submit
-        </button>
-        Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:change={updateStrikes}>
-        Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:change={updateStrikes}>
-        Percentile Filter: <input 
-            type=number 
-            bind:value={percentileFilter} 
-            min=0.0 
-            max=1.0 
-            step=0.01
-            on:change={updatePercentileFilter}
-        >
+  
+<Router url="{url}">
+    <div>
+        <Route path="/" component="{GammaExposure}" />
+        <Route path="/auth" component="{Auth}" />
     </div>
+</Router>
 
-    <div class="charts">
-        {#if data}
-            <GammaExposure bind:data={reducedData}/>
-        {/if}
-    </div>
-
-    <div class="apikey">
-        API Key: <input bind:value={apiKey} />
-        <button on:click={handleSaveApiKey}>
+<div class="auth">
+    <div class="client-id">
+        Client ID: <input bind:value={clientIdText} />
+        <button on:click={handleSaveClientId}>
             Save
         </button>
     </div>
-</main>
+    <div class="login">
+        <button on:click={handleLogin}>Login</button>
+    </div>
+</div>
 
 <style>
-    .controls input {
-        width: 100px;
-    }
-
-    .charts {
-        width: 30%;
-    }
-
-    .apikey {
+    .auth {
         margin-top: 100px;
     }
 </style>

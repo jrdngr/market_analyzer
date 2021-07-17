@@ -1,80 +1,86 @@
 <script>
-	import { beforeUpdate } from 'svelte';
-	import * as d3 from 'd3';
-	
-    export let data;
-	
-	let el = document.createElement("div");
+    import GammaExposure from './GammaExposureChart.svelte'
+    import { getOptionChain } from '../common/td';
+    import { gammaExposureByPrice } from '../common/math/gammaExposure';
 
-	beforeUpdate(() => {
-        const margin = ({top: 20, right: 0, bottom: 70, left: 70})
-        const width = 800;
-        const height = 500;
+    let symbol = null;
+    let minStrike = 0;
+    let maxStrike = 0;
+    let data = null;
+    let reducedData = null;
+    let percentileFilter = 0.3;
 
-        el.textContent = "";
+    async function handleSubmit() {
+        console.log("Fetching data");
+        const optionChain = await getOptionChain("SPY");
+        console.log(optionChain);
+        data = gammaExposureByPrice(optionChain);
+        console.log(data);
+        minStrike = Math.min(...data.prices.map(d => d.strike));
+        maxStrike = Math.max(...data.prices.map(d => d.strike));
+        setData(data);
+	}
 
-        d3.select(el).style("background", "black");
+    function updateStrikes() {
+        setData(data);
+    }
 
-        const x = d3.scaleBand()
-            .domain(data.map(d => d.strike))
-            .rangeRound([margin.left, width - margin.right])
-            .padding(0.2);
+    function updatePercentileFilter() {
+        setData(data);
+    }
 
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => Math.abs(d.gammaExposure))])
-            .range([height - margin.bottom, margin.top]);
+    function setData(data) {
+        reducedData = Object.assign({}, data);
 
-        const xAxis = g => g
-            .attr("transform", `translate(0,${height - margin.bottom})`)
-            .call(d3.axisBottom(x).tickSizeOuter(0));
+        // Trim leading and trailer GE = 0
+        reducedData = reducedData.prices
+            .map(d => Object.assign({}, d))
+            .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
+            
+        reducedData.forEach(d => {
+            if (Math.abs(d.gammaExposure) < data.absoluteMaximum * percentileFilter) {
+                d.gammaExposure = 0;
+            }
+        });
 
-        const yAxis = g => g
-            .attr("transform", `translate(${margin.left},0)`)
-            .call(d3.axisLeft(y).ticks(10))
-            .call(g => g.select(".domain").remove());
-
-        const svg = d3.create("svg")
-            .attr("viewBox", [0, 0, width, height]);
-
-        svg.append("g")
-            .selectAll("rect")
-            .data(data)
-            .join("rect")
-            .attr("x", d => x(d.strike))
-            .attr("y", d => y(Math.abs(d.gammaExposure)))
-            .attr("height", d => y(0) - y(Math.abs(d.gammaExposure)))
-            .attr("width", x.bandwidth())
-            .attr("fill", d => d.gammaExposure >= 0 ? "steelblue" : "tomato");
-
-        svg.append("g")
-            .call(xAxis)
-            .selectAll("text")
-            .data(data)
-            .attr("transform", "translate(12,25) rotate(90)")
-            .attr("fill", d => d.gammaExposure === 0 ? "transparent" : "white")
-            .attr("font-size", "1em");
-
-        svg.append("g")
-            .call(yAxis)
-            .selectAll("text")
-            .attr("fill", "white")
-            .attr("font-size", "1em");
-
-        el.append(svg.node());
-    });
+        minStrike = Math.min(...reducedData.map(d => d.strike));
+        maxStrike = Math.max(...reducedData.map(d => d.strike));
+    }
 </script>
 
 <main>
-    <div bind:this={el} class="chart"></div>
+    <div class="controls">
+        Symbol:
+        <input bind:value={symbol}>
+        <button on:click={handleSubmit}>
+            Submit
+        </button>
+        Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:change={updateStrikes}>
+        Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:change={updateStrikes}>
+        Percentile Filter: <input 
+            type=number 
+            bind:value={percentileFilter} 
+            min=0.0 
+            max=1.0 
+            step=0.01
+            on:change={updatePercentileFilter}
+        >
+    </div>
+
+    <div class="charts">
+        {#if data}
+            <GammaExposure bind:data={reducedData}/>
+        {/if}
+    </div>
+
 </main>
 
 <style>
-    .chart :global(div) {
-		font: 10px sans-serif;
-		background-color: steelblue;
-		text-align: right;
-		padding: 3px;
-		margin: 1px;
-		color: black;
-	}
+    .controls input {
+        width: 100px;
+    }
+
+    .charts {
+        width: 30%;
+    }
 </style>

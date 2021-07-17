@@ -1,5 +1,5 @@
 
-export function GammaExposureByPrice(optionsData) {
+export function gammaExposureByPrice(optionsData) {
     let strikeToGammaExposure = {};
 
     for (const contracts of Object.values(optionsData.callExpDateMap)) {
@@ -28,10 +28,10 @@ export function GammaExposureByPrice(optionsData) {
         }
     }
 
-    return GammaExposureStats(strikeToGammaExposure);
+    return gammaExposureStats(strikeToGammaExposure);
 }
 
-function GammaExposureStats(strikeToGammaExposure) {
+function gammaExposureStats(strikeToGammaExposure) {
     let positiveSum = 0.0;
     let positiveCount = 0;
     let negativeSum = 0.0;
