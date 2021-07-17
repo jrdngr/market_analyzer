@@ -8,8 +8,8 @@
 
 	beforeUpdate(() => {
         const margin = ({top: 20, right: 0, bottom: 70, left: 70})
-        const width = 1280;
-        const height = 800;
+        const width = 800;
+        const height = 500;
 
         el.textContent = "";
 
@@ -21,7 +21,7 @@
             .padding(0.2);
 
         const y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => Math.abs(d.gamma_exposure))])
+            .domain([0, d3.max(data, d => Math.abs(d.gammaExposure))])
             .range([height - margin.bottom, margin.top]);
 
         const xAxis = g => g
@@ -41,24 +41,24 @@
             .data(data)
             .join("rect")
             .attr("x", d => x(d.strike))
-            .attr("y", d => y(Math.abs(d.gamma_exposure)))
-            .attr("height", d => y(0) - y(Math.abs(d.gamma_exposure)))
+            .attr("y", d => y(Math.abs(d.gammaExposure)))
+            .attr("height", d => y(0) - y(Math.abs(d.gammaExposure)))
             .attr("width", x.bandwidth())
-            .attr("fill", d => d.gamma_exposure >= 0 ? "steelblue" : "tomato");
+            .attr("fill", d => d.gammaExposure >= 0 ? "steelblue" : "tomato");
 
         svg.append("g")
             .call(xAxis)
             .selectAll("text")
             .data(data)
-            .attr("transform", "translate(25,25) rotate(60)")
-            .attr("fill", d => d.gamma_exposure === 0 ? "transparent" : "white")
-            .attr("font-size", "2em");
+            .attr("transform", "translate(12,25) rotate(90)")
+            .attr("fill", d => d.gammaExposure === 0 ? "transparent" : "white")
+            .attr("font-size", "1em");
 
         svg.append("g")
             .call(yAxis)
             .selectAll("text")
             .attr("fill", "white")
-            .attr("font-size", "2em");
+            .attr("font-size", "1em");
 
         el.append(svg.node());
     });
