@@ -1,5 +1,5 @@
 <script>
-    import GammaExposure from './GammaExposure.svelte'
+    import GammaExposure from './components/GammaExposure.svelte'
 
     let symbol = null;
     let minStrike = 0;
