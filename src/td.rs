@@ -16,15 +16,17 @@ pub async fn get_option_chain(symbol: &str, force_download: bool) -> anyhow::Res
     let data_path = Path::new(&file_path);
 
     if data_path.exists() && !force_download {
+        log::info!("Fetching cached data for {}", symbol);
+
         let json = std::fs::read_to_string(&data_path)?;
         Ok(serde_json::from_str(&json)?)
     } else {
+        log::info!("Downloading today's data for {}", symbol);
         download_data(symbol, data_path).await
     }
 }
 
 async fn download_data(symbol: &str, data_path: &Path) -> anyhow::Result<OptionChain> {
-    println!("Downloading today's {} data", symbol);
     let api_key = std::env::var(API_KEY_ENV)?;
     let params = format!("apikey={}&symbol={}", api_key, symbol);
     let url = format!("{}?{}", OPTION_CHAIN_URL, params);
@@ -34,5 +36,11 @@ async fn download_data(symbol: &str, data_path: &Path) -> anyhow::Result<OptionC
     std::fs::create_dir_all(DATA_PATH)?;
     std::fs::write(&data_path, &body)?;
 
-    Ok(serde_json::from_str(&body)?)
+    let result: OptionChain = serde_json::from_str(&body)?;
+
+    if result.status == "FAILED" {
+        anyhow::bail!("Data request failed");
+    }
+
+    Ok(result)
 }

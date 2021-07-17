@@ -2,26 +2,94 @@ use std::{collections::BTreeMap, path::Path};
 
 use chrono::Utc;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 use crate::td;
 
 const REPORT_PATH: &str = "reports";
 
-pub async fn gamma_exposure_by_price(symbol: &str, force_download: bool) -> anyhow::Result<BTreeMap<Decimal, f64>> {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GammaExposureStats {
+    pub prices: Vec<GammaExposure>,
+    pub average_absolute_exposure: f64,
+    pub average_positive_exposure: f64,
+    pub average_negative_exposure: f64,
+}
+
+impl GammaExposureStats {
+    pub fn new(strike_to_gamma_exposure: &BTreeMap<Decimal, f64>) -> Self {
+
+        let mut positive_sum: f64 = 0.0;
+        let mut positive_count = 0;
+        let mut negative_sum: f64 = 0.0;
+        let mut negative_count = 0;
+
+        for (_, exposure) in strike_to_gamma_exposure {
+            if *exposure >= 0.0 {
+                positive_sum += exposure;
+                positive_count += 1;
+            } else {
+                negative_sum += exposure;
+                negative_count += 1;
+            }
+        }
+
+        positive_count = positive_count.max(1);
+        negative_count = negative_count.max(1);
+
+        let average_positive_exposure = positive_sum / positive_count as f64;
+        let average_negative_exposure = negative_sum / negative_count as f64;
+        let average_absolute_exposure = (positive_sum.abs() + negative_sum.abs()) / (positive_count + negative_count) as f64;
+
+        let mut prices: Vec<GammaExposure> = strike_to_gamma_exposure
+            .into_iter()
+            .map(|(strike, exposure)| GammaExposure::new(*strike, *exposure))
+            .collect();
+
+        prices.sort_by_key(|k| k.strike);
+
+        Self {
+            prices,
+            average_absolute_exposure,
+            average_positive_exposure,
+            average_negative_exposure,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GammaExposure {
+    pub strike: Decimal,
+    pub gamma_exposure: f64,
+}
+
+impl GammaExposure {
+    pub fn new(strike: Decimal, gamma_exposure: f64) -> Self {
+        Self {
+            strike,
+            gamma_exposure,
+        }
+    }
+}
+
+pub async fn gamma_exposure_by_price(
+    symbol: &str,
+    force_download: bool,
+) -> anyhow::Result<GammaExposureStats> {
     dotenv::dotenv()?;
 
-    let options = td::get_option_chain(symbol, force_download).await?;
+    let options = td::get_option_chain(&symbol.to_uppercase(), force_download).await?;
 
-    let mut price_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
+    let mut strike_to_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
 
     for contracts in options.call_exp_date_map.values() {
         for (strike, options) in contracts {
             for option in options {
                 let exposure = option.gamma * option.open_interest;
-                match price_gamma_exposure.get_mut(strike) {
+                match strike_to_gamma_exposure.get_mut(strike) {
                     Some(exp) => *exp += exposure,
                     None => {
-                        price_gamma_exposure.insert(*strike, exposure);
+                        strike_to_gamma_exposure.insert(*strike, exposure);
                     }
                 }
             }
@@ -31,20 +99,25 @@ pub async fn gamma_exposure_by_price(symbol: &str, force_download: bool) -> anyh
         for (strike, options) in contracts {
             for option in options {
                 let exposure = option.gamma * option.open_interest * -1.0;
-                match price_gamma_exposure.get_mut(strike) {
+                match strike_to_gamma_exposure.get_mut(strike) {
                     Some(exp) => *exp += exposure,
                     None => {
-                        price_gamma_exposure.insert(*strike, exposure);
+                        strike_to_gamma_exposure.insert(*strike, exposure);
                     }
                 }
             }
         }
     }
 
-    Ok(price_gamma_exposure)
+    Ok(GammaExposureStats::new(&strike_to_gamma_exposure))
 }
 
-pub async fn print_gamma_exposure_by_price(symbol: &str, force_download: bool) -> anyhow::Result<()> {
+#[deprecated]
+/// Original function to generate csv files
+pub async fn print_gamma_exposure_by_price(
+    symbol: &str,
+    force_download: bool,
+) -> anyhow::Result<()> {
     dotenv::dotenv()?;
 
     let options = td::get_option_chain(symbol, force_download).await?;
@@ -53,7 +126,7 @@ pub async fn print_gamma_exposure_by_price(symbol: &str, force_download: bool) -
     let mut call_count = 0;
     let mut put_exposure = 0.0;
     let mut put_count = 0;
-    let mut price_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
+    let mut strike_to_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
 
     for contracts in options.call_exp_date_map.values() {
         for (strike, options) in contracts {
@@ -61,10 +134,10 @@ pub async fn print_gamma_exposure_by_price(symbol: &str, force_download: bool) -
                 let exposure = option.gamma * option.open_interest;
                 call_exposure += exposure;
                 call_count += 1;
-                match price_gamma_exposure.get_mut(strike) {
+                match strike_to_gamma_exposure.get_mut(strike) {
                     Some(exp) => *exp += exposure,
                     None => {
-                        price_gamma_exposure.insert(*strike, exposure);
+                        strike_to_gamma_exposure.insert(*strike, exposure);
                     }
                 }
             }
@@ -76,10 +149,10 @@ pub async fn print_gamma_exposure_by_price(symbol: &str, force_download: bool) -
                 let exposure = option.gamma * option.open_interest * -1.0;
                 put_exposure += exposure;
                 put_count += 1;
-                match price_gamma_exposure.get_mut(strike) {
+                match strike_to_gamma_exposure.get_mut(strike) {
                     Some(exp) => *exp += exposure,
                     None => {
-                        price_gamma_exposure.insert(*strike, exposure);
+                        strike_to_gamma_exposure.insert(*strike, exposure);
                     }
                 }
             }
@@ -90,11 +163,11 @@ pub async fn print_gamma_exposure_by_price(symbol: &str, force_download: bool) -
     let average_call_exposure = call_exposure / (call_count as f64);
     let average_put_exposure = put_exposure / (put_count as f64);
     let average_exposure =
-        (call_exposure.abs() + put_exposure.abs()) / (price_gamma_exposure.len() as f64);
+        (call_exposure.abs() + put_exposure.abs()) / (strike_to_gamma_exposure.len() as f64);
 
     println!("----------------------------------------------------");
     let mut csv = String::new();
-    for (strike, exposure) in price_gamma_exposure {
+    for (strike, exposure) in strike_to_gamma_exposure {
         if exposure.abs() >= average_exposure {
             csv.push_str(&format!("{}, {}\n", strike, exposure));
             println!("{}: {}", strike, exposure);
@@ -116,4 +189,3 @@ pub async fn print_gamma_exposure_by_price(symbol: &str, force_download: bool) -
 
     Ok(())
 }
-
