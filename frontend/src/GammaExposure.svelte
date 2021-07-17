@@ -7,13 +7,13 @@
 	let el = document.createElement("div");
 
 	beforeUpdate(() => {
-        const margin = ({top: 20, right: 0, bottom: 30, left: 40})
+        const margin = ({top: 20, right: 0, bottom: 70, left: 70})
         const width = 1280;
         const height = 800;
 
         el.textContent = "";
 
-        d3.select(el).style("background", "white");
+        d3.select(el).style("background", "black");
 
         const x = d3.scaleBand()
             .domain(data.map(d => d.strike))
@@ -49,10 +49,16 @@
         svg.append("g")
             .call(xAxis)
             .selectAll("text")
-            .attr("transform", "translate(15,25) rotate(90)");
+            .data(data)
+            .attr("transform", "translate(25,25) rotate(60)")
+            .attr("fill", d => d.gamma_exposure === 0 ? "transparent" : "white")
+            .attr("font-size", "2em");
 
         svg.append("g")
-            .call(yAxis);
+            .call(yAxis)
+            .selectAll("text")
+            .attr("fill", "white")
+            .attr("font-size", "2em");
 
         el.append(svg.node());
     });

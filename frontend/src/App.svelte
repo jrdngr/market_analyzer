@@ -6,7 +6,7 @@
     let maxStrike = 0;
     let data = null;
     let reducedData = null;
-    let percentileFilter = 0.01;
+    let percentileFilter = 0.3;
 
     async function handleSubmit() {
         console.log("Fetching data");
@@ -23,6 +23,8 @@
 
     function setData(data) {
         reducedData = Object.assign({}, data);
+
+        // Trim leading and trailer GE = 0
         reducedData = reducedData.prices
             .map(d => Object.assign({}, d))
             .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
@@ -45,15 +47,15 @@
     <button on:click={handleSubmit}>
         Submit
     </button>
-    Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:input={updateStrikes}>
-    Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:input={updateStrikes}>
+    Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:change={updateStrikes}>
+    Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:change={updateStrikes}>
     Percentile Filter: <input 
         type=number 
         bind:value={percentileFilter} 
         min=0.0 
         max=1.0 
         step=0.01
-        on:input={updateStrikes}
+        on:change={updateStrikes}
     >
 
     {#if data}
@@ -62,4 +64,7 @@
 </main>
 
 <style>
+    input {
+        width: 100px;
+    }
 </style>
