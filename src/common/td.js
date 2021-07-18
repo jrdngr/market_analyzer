@@ -8,7 +8,13 @@ export function storeClientId(clientId) {
 }
 
 export function clientId() {
-    return localStorage.getItem(CLIENT_ID_KEY);
+    let apiKey = localStorage.getItem(CLIENT_ID_KEY);
+    return `${apiKey}@AMER.OAUTHAP`;
+}
+
+export function clientIdUrl() {
+    let apiKey = localStorage.getItem(CLIENT_ID_KEY);
+    return `${apiKey}%40AMER.OAUTHAP`;
 }
 
 export function storeCode(code) {
@@ -19,16 +25,19 @@ export function code() {
     return localStorage.getItem(CODE_KEY);
 }
 
+export function codeUrl() {
+    let code = localStorage.getItem(CODE_KEY);
+    return encodeURIComponent(code);
+}
+
 export async function login() {
     const body = {
         grant_type: `authorization_code`,
         access_type: `offline`,
         code: code(),
-        client_id: `${clientId()}@AMER.OAUTHAP`,
+        client_id: clientId(),
         redirect_uri: `https://localhost:5000/auth`,
     };
-
-    console.log(body);
 
     const response = await fetch(AUTH_URL, {
         method: 'POST',
@@ -42,8 +51,7 @@ export async function login() {
 }
 
 export async function getOptionChain(symbol) {
-    const apiKey = apiKey();
-    const url = `${OPTION_CHAIN_URL}?apikey=${apiKey}&symbol=${symbol}`;
+    const url = `${OPTION_CHAIN_URL}?apikey=${clientId()}&symbol=${symbol}`;
     const data = await (await fetch(url)).json();
     return data;
 }
