@@ -1,6 +1,6 @@
 <script>
     import { Router, Route } from "svelte-routing";
-    import { clientIdUrl, storeClientId } from './common/td';
+    import { clientIdUrl, storeClientId, logout } from './common/td';
     import Auth from './components/Auth.svelte';
     import GammaExposure from './components/GammaExposure.svelte';
 
@@ -17,6 +17,10 @@
         const redirect_uri = encodeURIComponent("https://localhost:5000/auth");
         const url = `https://auth.tdameritrade.com/auth?response_type=code&redirect_uri=${redirect_uri}&client_id=${clientIdUrl()}`;
         window.location.href = url;
+    }
+
+    function handleLogout() {
+        logout();
     }
 
 </script>
@@ -37,6 +41,9 @@
     </div>
     <div class="login">
         <button on:click={handleLogin}>Login</button>
+    </div>
+    <div class="logout">
+        <button on:click={handleLogout}>Logout</button>
     </div>
 </div>
 

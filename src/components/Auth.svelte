@@ -1,12 +1,9 @@
 <script>
-    import { storeCode, login } from '../common/td';
+    import { login } from '../common/td';
 
     const urlParams = new URLSearchParams(window.location.search);
     const code = decodeURI(urlParams.get(`code`));
-    storeCode(code);
-    const refreshToken = login();
-    console.log(refreshToken);
-    // window.location.href = "https://localhost:5000";
+    login(code);
 </script>
 
 <p>Auth!</p>

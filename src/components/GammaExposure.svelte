@@ -12,7 +12,7 @@
 
     async function handleSubmit() {
         console.log("Fetching data");
-        const optionChain = await getOptionChain("SPY");
+        const optionChain = await getOptionChain(symbol);
         console.log(optionChain);
         data = gammaExposureByPrice(optionChain);
         console.log(data);
