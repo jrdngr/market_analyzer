@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import GammaExposureChart from './GammaExposureChart.svelte'
+    import GammaPriceChart from './GammaPriceChart.svelte'
     import { getOptionChain, getQuote } from '../common/td';
     import { gammaExposureByPrice } from '../common/math/gammaExposure';
 
@@ -66,7 +66,7 @@
 
     <div class="charts">
         {#if data}
-            <GammaExposureChart bind:data={reducedData}/>
+            <GammaPriceChart bind:data={reducedData}/>
         {/if}
     </div>
 

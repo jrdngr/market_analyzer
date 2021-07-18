@@ -2,7 +2,7 @@
     import { Router, Route } from "svelte-routing";
     import { clientIdUrl, storeClientId, logout } from './common/td';
     import Auth from './components/Auth.svelte';
-    import GammaExposure from './components/GammaExposure.svelte';
+    import Charts from './components/Charts.svelte';
 
     export let url = "";
     
@@ -46,7 +46,7 @@
 
 <Router url="{url}">
     <div>
-        <Route path="/" component="{GammaExposure}" />
+        <Route path="/" component="{Charts}" />
         <Route path="/auth" component="{Auth}" />
     </div>
 </Router>
