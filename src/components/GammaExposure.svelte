@@ -1,6 +1,6 @@
 <script>
     import GammaExposure from './GammaExposureChart.svelte'
-    import { getOptionChain } from '../common/td';
+    import { getOptionChain, getQuote } from '../common/td';
     import { gammaExposureByPrice } from '../common/math/gammaExposure';
 
     let symbol = null;
@@ -13,11 +13,11 @@
     async function handleSubmit() {
         console.log("Fetching data");
         const optionChain = await getOptionChain(symbol);
-        console.log(optionChain);
+        const quote = await getQuote(symbol);
         data = gammaExposureByPrice(optionChain);
-        console.log(data);
-        minStrike = Math.min(...data.prices.map(d => d.strike));
-        maxStrike = Math.max(...data.prices.map(d => d.strike));
+        data.quote = quote;
+        minStrike = quote[symbol.toUpperCase()].lastPrice - 20;
+        maxStrike = quote[symbol.toUpperCase()].lastPrice + 20;
         setData(data);
 	}
 

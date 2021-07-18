@@ -7,6 +7,7 @@
     export let url = "";
     
     let clientIdText = "";
+    let showAuth = false;
 
     function handleSaveClientId() {
         storeClientId(clientIdText);
@@ -24,7 +25,25 @@
     }
 
 </script>
-  
+
+<div class="auth">
+    <button on:click={() => showAuth = !showAuth}>Auth</button>
+    {#if showAuth}
+        <div class="client-id">
+            Client ID: <input bind:value={clientIdText} />
+            <button on:click={handleSaveClientId}>
+                Save
+            </button>
+        </div>
+        <div class="login">
+            <button on:click={handleLogin}>Login</button>
+        </div>
+        <div class="logout">
+            <button on:click={handleLogout}>Logout</button>
+        </div>
+    {/if}
+</div>
+
 <Router url="{url}">
     <div>
         <Route path="/" component="{GammaExposure}" />
@@ -32,23 +51,10 @@
     </div>
 </Router>
 
-<div class="auth">
-    <div class="client-id">
-        Client ID: <input bind:value={clientIdText} />
-        <button on:click={handleSaveClientId}>
-            Save
-        </button>
-    </div>
-    <div class="login">
-        <button on:click={handleLogin}>Login</button>
-    </div>
-    <div class="logout">
-        <button on:click={handleLogout}>Logout</button>
-    </div>
-</div>
-
 <style>
     .auth {
-        margin-top: 100px;
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
     }
 </style>

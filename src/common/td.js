@@ -1,5 +1,4 @@
 const AUTH_URL = `https://api.tdameritrade.com/v1/oauth2/token`;
-const OPTION_CHAIN_URL = `https://api.tdameritrade.com/v1/marketdata/chains`;
 const AUTH_REDIRECT_URL = `https://localhost:5000/auth`;
 const CLIENT_ID_KEY = `CLIENT_ID`;
 const REFRESH_TOKEN_KEY = `REFRESH_TOKEN`;
@@ -136,7 +135,7 @@ export async function updateRefreshToken() {
 export async function getOptionChain(symbol) {
     let accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
     if (accessToken) {
-        const url = `${OPTION_CHAIN_URL}?symbol=${symbol.toUpperCase()}`;
+        const url = `https://api.tdameritrade.com/v1/marketdata/chains?symbol=${symbol.toUpperCase()}`;
         const data = await (await fetch(url, {
             method: 'GET',
             headers: {
@@ -145,7 +144,25 @@ export async function getOptionChain(symbol) {
         })).json();
         return data;
     } else {
-        const url = `${OPTION_CHAIN_URL}?apikey=${clientIdUrl()}&symbol=${symbol.toUpperCase()}`;
+        const url = `https://api.tdameritrade.com/v1/marketdata/chains?apikey=${clientIdUrl()}&symbol=${symbol.toUpperCase()}`;
+        const data = await (await fetch(url)).json();
+        return data;
+    }
+}
+
+export async function getQuote(symbol) {
+    let accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (accessToken) {
+        const url = `https://api.tdameritrade.com/v1/marketdata/${symbol.toUpperCase()}/quotes}`;
+        const data = await (await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        })).json();
+        return data;
+    } else {
+        const url = `https://api.tdameritrade.com/v1/marketdata/${symbol.toUpperCase()}/quotes?apikey=${clientIdUrl()}`;
         const data = await (await fetch(url)).json();
         return data;
     }
