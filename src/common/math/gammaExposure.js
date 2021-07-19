@@ -76,6 +76,8 @@ function gammaExposureStats(strikeToGammaExposure) {
         return { strike: s, gammaExposure: e};
     });
 
+    prices.sort((p1, p2) => p1.strike - p2.strike);
+
     const result = {
         prices,
         averageAbsoluteExposure,
