@@ -44,7 +44,7 @@
             .attr("y", d => y(Math.abs(d.gammaExposure)))
             .attr("height", d => y(0) - y(Math.abs(d.gammaExposure)))
             .attr("width", x.bandwidth())
-            .attr("fill", d => d.gammaExposure >= 0 ? "steelblue" : "tomato");
+            .attr("fill", d => d.gammaExposure >= 0 ? "tomato" : "steelblue");
 
         svg.append("g")
             .call(xAxis)

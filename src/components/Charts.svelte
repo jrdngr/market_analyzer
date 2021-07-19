@@ -19,7 +19,7 @@ Symbol:
 {#key submittedSymbol}
     {#if submittedSymbol}
         <GammaExposure bind:symbol={submittedSymbol}/>
-        <GammaPrice bind:symbol={submittedSymbol}/>
+        <!-- <GammaPrice bind:symbol={submittedSymbol}/> -->
     {/if}
 {/key}
 

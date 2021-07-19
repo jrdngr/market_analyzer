@@ -13,8 +13,6 @@
 
         el.textContent = "";
 
-        d3.select(el).style("background", "black");
-
         const x = d3.scaleBand()
             .domain(data.map(d => d.strike))
             .rangeRound([margin.left, width - margin.right])
