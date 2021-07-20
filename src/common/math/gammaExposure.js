@@ -3,6 +3,10 @@ export function gammaExposureByPrice(optionsData) {
     let strikeToGammaExposure = {};
 
     for (const option of optionsData) {
+        if (!option.greeks) {
+            continue;
+        }
+
         let exposure = option.greeks.gamma * option.open_interest;
         if (option.option_type === "put") {
             exposure *= -1;

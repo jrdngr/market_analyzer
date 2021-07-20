@@ -10,7 +10,7 @@
     let maxStrike = 0;
     let data = null;
     let reducedData = null;
-    let percentileFilter = 0.3;
+    let percentileFilter = 0.0;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -19,8 +19,8 @@
         data = gammaExposureByPrice(optionChain);
         data.quote = quote;
 
-        centerOnPrice(quote.last);
-        
+        console.log(data);
+
         setData(data);
     });
 
@@ -35,7 +35,6 @@
     function setData(data) {
         reducedData = Object.assign({}, data);
 
-        // Trim leading and trailer GE = 0
         reducedData = reducedData.prices
             .map(d => Object.assign({}, d))
             .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
@@ -46,12 +45,19 @@
             }
         });
 
-        minStrike = Math.min(...reducedData.map(d => d.strike));
-        maxStrike = Math.max(...reducedData.map(d => d.strike));
+        centerOnPrice(data);
     }
 
-    function centerOnPrice(price) {
+    function centerOnPrice(data) {
+        const price = data.quote.last;
         const offsetDigits = Math.floor(Math.log10(price)) - 1;
+        
+        if (offsetDigits < 0) {
+            minStrike = Math.min(...data.prices.map(d => d.strike));
+            maxStrike = Math.max(...data.prices.map(d => d.strike));
+            return;
+        }
+
         const offset = 2 * Math.pow(10, offsetDigits);
 
         minStrike = price - offset;
@@ -84,7 +90,7 @@
 
 <style>
     .controls input {
-        width: 100px;
+        width: 150px;
     }
 
     .charts {
