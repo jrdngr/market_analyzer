@@ -1,7 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import GammaExposureChart from './GammaExposureChart.svelte'
-    import { getOptionChain, getQuote } from '../common/td';
+    import { getOptionChain, getQuote } from '../common/apis/tradier';
     import { gammaExposureByPrice } from '../common/math/gammaExposure';
 
     export let symbol = null;
@@ -18,8 +18,8 @@
         const quote = await getQuote(symbol);
         data = gammaExposureByPrice(optionChain);
         data.quote = quote;
-        minStrike = quote[symbol.toUpperCase()].lastPrice - 20;
-        maxStrike = quote[symbol.toUpperCase()].lastPrice + 20;
+        minStrike = quote.last - 20;
+        maxStrike = quote.last + 20;
         setData(data);
     });
 

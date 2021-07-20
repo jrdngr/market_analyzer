@@ -1,7 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import GammaPriceChart from './GammaPriceChart.svelte'
-    import { getOptionChain, getQuote } from '../common/td';
+    import { getOptionChain, getQuote } from '../common/apis/td';
     import { gammaExposureByPrice } from '../common/math/gammaExposure';
 
     export let symbol = null;

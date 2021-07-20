@@ -2,29 +2,15 @@
 export function gammaExposureByPrice(optionsData) {
     let strikeToGammaExposure = {};
 
-    for (const contracts of Object.values(optionsData.callExpDateMap)) {
-        for (const [strike, options] of Object.entries(contracts)) {
-            for (const option of options) {
-                const exposure = option.gamma * option.openInterest;
-                if (!strikeToGammaExposure[strike]) {
-                    strikeToGammaExposure[strike] = exposure;
-                } else {
-                    strikeToGammaExposure[strike] += exposure;
-                }
-            }
+    for (const option of optionsData) {
+        let exposure = option.greeks.gamma * option.open_interest;
+        if (option.option_type === "put") {
+            exposure *= -1;
         }
-    }
-
-    for (const contracts of Object.values(optionsData.putExpDateMap)) {
-        for (const [strike, options] of Object.entries(contracts)) {
-            for (const option of options) {
-                const exposure = option.gamma * option.openInterest * -1.0;
-                if (!strikeToGammaExposure[strike]) {
-                    strikeToGammaExposure[strike] = exposure;
-                } else {
-                    strikeToGammaExposure[strike] += exposure;
-                }
-            }
+        if (!strikeToGammaExposure[option.strike]) {
+            strikeToGammaExposure[option.strike] = exposure;
+        } else {
+            strikeToGammaExposure[option.strike] += exposure;
         }
     }
 
