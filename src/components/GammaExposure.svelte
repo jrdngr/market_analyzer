@@ -19,7 +19,7 @@
         data = gammaExposureByPrice(optionChain);
         data.quote = quote;
 
-        console.log(data);
+        centerOnPrice(data);
 
         setData(data);
     });
@@ -38,14 +38,15 @@
         reducedData = reducedData.prices
             .map(d => Object.assign({}, d))
             .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
-            
+
         reducedData.forEach(d => {
             if (Math.abs(d.gammaExposure) < data.absoluteMaximum * percentileFilter) {
                 d.gammaExposure = 0;
             }
         });
 
-        centerOnPrice(data);
+        minStrike = Math.min(...reducedData.prices.map(d => d.strike));
+        maxStrike = Math.max(...reducedData.prices.map(d => d.strike));
     }
 
     function centerOnPrice(data) {
