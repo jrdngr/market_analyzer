@@ -18,8 +18,9 @@
         const quote = await getQuote(symbol);
         data = gammaExposureByPrice(optionChain);
         data.quote = quote;
-        minStrike = quote.last - 20;
-        maxStrike = quote.last + 20;
+
+        centerOnPrice(quote.last);
+        
         setData(data);
     });
 
@@ -48,6 +49,14 @@
         minStrike = Math.min(...reducedData.map(d => d.strike));
         maxStrike = Math.max(...reducedData.map(d => d.strike));
     }
+
+    function centerOnPrice(price) {
+        const offsetDigits = Math.floor(Math.log10(price)) - 1;
+        const offset = 2 * Math.pow(10, offsetDigits);
+
+        minStrike = price - offset;
+        maxStrike = price + offset;
+    }
 </script>
 
 <main>
@@ -66,6 +75,7 @@
 
     <div class="charts">
         {#if data}
+            <p>Last: {data.quote.last}</p>
             <GammaExposureChart bind:data={reducedData}/>
         {/if}
     </div>
@@ -78,6 +88,6 @@
     }
 
     .charts {
-        width: 50%;
+        width: 80%;
     }
 </style>

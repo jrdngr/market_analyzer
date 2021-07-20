@@ -2,7 +2,7 @@
     import GammaExposure from './GammaExposure.svelte';
     import GammaPrice from './GammaPrice.svelte';
 
-    let symbol = "SPY";
+    let symbol = "SPX";
     let submittedSymbol = null;
 
     async function handleSubmit() {
