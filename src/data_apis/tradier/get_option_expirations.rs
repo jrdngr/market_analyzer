@@ -22,10 +22,10 @@ pub async fn get_option_expirations(symbol: &str) -> anyhow::Result<Vec<String>>
 
 #[derive(Clone, Debug, Deserialize)]
 struct ExpirationResponse {
-    expirations: ExpirationDates,
+    expirations: ExpirationResponseInner,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct ExpirationDates {
+struct ExpirationResponseInner {
     dates: Vec<String>,
 }

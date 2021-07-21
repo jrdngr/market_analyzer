@@ -1,12 +1,9 @@
-use std::{collections::BTreeMap, convert::TryFrom, path::Path};
+use std::{collections::BTreeMap, convert::TryFrom};
 
-use chrono::Utc;
-use rust_decimal::Decimal;
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde::{Deserialize, Serialize};
 
 use crate::data_apis::tradier;
-
-const REPORT_PATH: &str = "reports";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GammaExposureStats {
@@ -110,30 +107,19 @@ pub async fn gamma_exposure_by_price(
 
     let mut strike_to_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
 
-    for contracts in options.call_exp_date_map.values() {
-        for (strike, options) in contracts {
-            for option in options {
-                let exposure = option.gamma * option.open_interest;
-                match strike_to_gamma_exposure.get_mut(strike) {
-                    Some(exp) => *exp += exposure,
-                    None => {
-                        strike_to_gamma_exposure.insert(*strike, exposure);
-                    }
-                }
+    for option in options {
+        let strike = Decimal::from_f64(option.strike);
+        if let (Some(strike), Some(greeks)) = (strike, option.greeks) {
+            let mut exposure = greeks.gamma * option.open_interest as f64;
+            if option.option_type == "put" {
+                exposure *= -1.0;
             }
-        }
-    }
-    for contracts in options.put_exp_date_map.values() {
-        for (strike, options) in contracts {
-            for option in options {
-                let exposure = option.gamma * option.open_interest * -1.0;
-                match strike_to_gamma_exposure.get_mut(strike) {
-                    Some(exp) => *exp += exposure,
-                    None => {
-                        strike_to_gamma_exposure.insert(*strike, exposure);
-                    }
+            match strike_to_gamma_exposure.get_mut(&strike) {
+                Some(exp) => *exp += exposure,
+                None => {
+                    strike_to_gamma_exposure.insert(strike, exposure);
                 }
-            }
+            }    
         }
     }
 
