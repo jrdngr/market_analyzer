@@ -1,6 +1,30 @@
+use std::path::Path;
+
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
-pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<OptionInfo>> {
+const DATA_PATH: &str = "data";
+
+pub async fn get_option_chain(
+    symbol: &str,
+    force_download: bool,
+) -> anyhow::Result<Vec<OptionInfo>> {
+    let file_date = Utc::now().format("%Y%m%d").to_string();
+    let file_path = format!("{}/{}_{}.json", DATA_PATH, symbol, file_date);
+    let data_path = Path::new(&file_path);
+
+    if data_path.exists() && !force_download {
+        log::info!("Fetching cached data for {}", symbol);
+
+        let json = std::fs::read_to_string(&data_path)?;
+        Ok(serde_json::from_str(&json)?)
+    } else {
+        log::info!("Downloading today's data for {}", symbol);
+        download_data(symbol, data_path).await
+    }
+}
+
+async fn download_data(symbol: &str, data_path: &Path) -> anyhow::Result<Vec<OptionInfo>> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
 
     let expirations = super::get_option_expirations(symbol).await?;
@@ -21,9 +45,13 @@ pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<OptionInfo>> {
             .text()
             .await?;
 
-        let response: OptionChainResponse = serde_json::from_str(&body)?;
+        let response = serde_json::from_str::<OptionChainResponse>(&body)?;
         result.extend(response.options.option);
     }
+
+    let cache_data = serde_json::to_string_pretty(&result)?;
+    std::fs::create_dir_all(DATA_PATH)?;
+    std::fs::write(&data_path, &cache_data)?;
 
     Ok(result)
 }
@@ -42,8 +70,8 @@ pub struct OptionInfo {
     pub high: Option<f64>,
     pub low: Option<f64>,
     pub close: Option<f64>,
-    pub bid: f64,
-    pub ask: f64,
+    pub bid: Option<f64>,
+    pub ask: Option<f64>,
     pub underlying: String,
     pub strike: f64,
     pub change_percentage: Option<f64>,
@@ -51,13 +79,13 @@ pub struct OptionInfo {
     pub last_volume: u64,
     pub trade_date: u64,
     pub prevclose: Option<f64>,
-    pub week_52_high: f64,
-    pub week_52_low: f64,
+    pub week_52_high: Option<f64>,
+    pub week_52_low: Option<f64>,
     pub bidsize: u64,
-    pub bidexch: String,
+    pub bidexch: Option<String>,
     pub bid_date: u64,
     pub asksize: u64,
-    pub askexch: String,
+    pub askexch: Option<String>,
     pub ask_date: u64,
     pub open_interest: u64,
     pub contract_size: u64,

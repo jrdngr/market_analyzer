@@ -19,6 +19,10 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::path!("gamma" / String))
         .and_then(handle_gamma_exposure);
 
+    let gamma_exposure_fresh = warp::get()
+        .and(warp::path!("gamma" / String / "fresh"))
+        .and_then(handle_gamma_exposure_fresh);
+
     let quote = warp::get()
         .and(warp::path!("quote" / String))
         .and_then(handle_quote);
@@ -27,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
         .allow_any_origin()
         .allow_methods(vec!["GET", "POST", "PUT"]);
 
-    let routes = gamma_exposure.or(quote);
+    let routes = gamma_exposure.or(gamma_exposure_fresh).or(quote);
 
     warp::serve(routes.recover(handle_rejection).with(cors))
         .run(([127, 0, 0, 1], 3030))
@@ -36,12 +40,8 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-// async fn gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejection> {
-//     handle_gamma_exposure(symbol).await
-// }
-
 async fn handle_gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejection> {
-    match gamma_exposure::gamma_exposure_by_price(&symbol).await {
+    match gamma_exposure::gamma_exposure_by_price(&symbol, false).await {
         Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
         Err(err) => {
             log::error!("{:?}", err);
@@ -50,9 +50,15 @@ async fn handle_gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejec
     }
 }
 
-// async fn quote(symbol: String) -> Result<impl warp::Reply, Rejection> {
-//     handle_quote(symbol).await
-// }
+async fn handle_gamma_exposure_fresh(symbol: String) -> Result<impl warp::Reply, Rejection> {
+    match gamma_exposure::gamma_exposure_by_price(&symbol, true).await {
+        Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
+        Err(err) => {
+            log::error!("{:?}", err);
+            Err(warp::reject::not_found())
+        }
+    }
+}
 
 async fn handle_quote(symbol: String) -> Result<impl warp::Reply, Rejection> {
     match tradier::get_quote(&symbol).await {
