@@ -2,15 +2,15 @@ pub mod data_apis;
 pub mod gamma_exposure;
 pub mod utils;
 
+use data_apis::tradier;
 use std::convert::Infallible;
 use warp::{http::StatusCode, Filter, Rejection};
-use data_apis::tradier;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
-    } 
+    }
 
     dotenv::dotenv().ok();
     pretty_env_logger::init();

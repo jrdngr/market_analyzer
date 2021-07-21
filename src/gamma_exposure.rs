@@ -61,7 +61,7 @@ impl GammaExposureStats {
         let weighted_average_negative_price = f64::try_from(weighted_negative_sum)? / negative_sum;
 
         let mut prices: Vec<GammaExposure> = strike_to_gamma_exposure
-            .into_iter()
+            .iter()
             .map(|(strike, exposure)| GammaExposure::new(*strike, *exposure))
             .collect();
 

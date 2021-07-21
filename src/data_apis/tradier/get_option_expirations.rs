@@ -17,7 +17,10 @@ pub async fn get_option_expirations(symbol: &str) -> anyhow::Result<Vec<String>>
 
     let expirations: ExpirationResponse = serde_json::from_str(&body)?;
 
-    Ok(expirations.expirations.ok_or_else(|| anyhow::anyhow!("No expirations"))?.date)
+    Ok(expirations
+        .expirations
+        .ok_or_else(|| anyhow::anyhow!("No expirations"))?
+        .date)
 }
 
 #[derive(Clone, Debug, Deserialize)]
