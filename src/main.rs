@@ -1,5 +1,5 @@
+pub mod data_apis;
 pub mod gamma_exposure;
-pub mod td;
 pub mod utils;
 
 use std::convert::Infallible;
@@ -8,6 +8,7 @@ use warp::{http::StatusCode, Filter, Rejection};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    dotenv::dotenv().ok();
     pretty_env_logger::init();
 
     let gamma_exposure = warp::get()
