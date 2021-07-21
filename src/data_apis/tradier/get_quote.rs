@@ -16,14 +16,8 @@ pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
         .await?;
 
     let quotes: QuoteResponse = serde_json::from_str(&body)?;
-    let quote = quotes
-        .quotes
-        .quote
-        .into_iter()
-        .next()
-        .ok_or_else(|| anyhow::anyhow!("No quote"))?;
 
-    Ok(quote)
+    Ok(quotes.quotes.quote)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -50,10 +44,10 @@ pub struct Quote {
     pub week_52_high: f64,
     pub week_52_low: f64,
     pub bidsize: u64,
-    pub bidexch: String,
+    pub bidexch: Option<String>,
     pub bid_date: u64,
     pub asksize: u64,
-    pub askexch: String,
+    pub askexch: Option<String>,
     pub ask_date: u64,
     pub root_symbols: String,
 }
@@ -65,5 +59,5 @@ struct QuoteResponse {
 
 #[derive(Clone, Debug, Deserialize)]
 struct QuoteResponseInner {
-    quote: Vec<Quote>,
+    quote: Quote,
 }
