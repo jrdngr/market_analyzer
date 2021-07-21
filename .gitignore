@@ -1,6 +1,5 @@
-/node_modules/
-/public/build/
-/local/
-
-.DS_Store
+/data
+/reports
+/target
 .env
+Cargo.lock
