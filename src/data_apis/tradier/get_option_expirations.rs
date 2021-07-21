@@ -2,9 +2,9 @@ use serde::Deserialize;
 
 pub async fn get_option_expirations(symbol: &str) -> anyhow::Result<Vec<String>> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
-    let params = format!("symbol=${}&includeAllRoots=true", symbol);
+    let params = format!("symbol={}&includeAllRoots=true", symbol);
     let url = format!("{}/markets/options/expirations?{}", super::BASE_URL, params);
-    
+
     let client = reqwest::Client::new();
     let body = client
         .get(url)
@@ -14,18 +14,18 @@ pub async fn get_option_expirations(symbol: &str) -> anyhow::Result<Vec<String>>
         .await?
         .text()
         .await?;
-    
+
     let expirations: ExpirationResponse = serde_json::from_str(&body)?;
 
-    Ok(expirations.expirations.dates)
+    Ok(expirations.expirations.ok_or_else(|| anyhow::anyhow!("No expirations"))?.date)
 }
 
 #[derive(Clone, Debug, Deserialize)]
 struct ExpirationResponse {
-    expirations: ExpirationResponseInner,
+    expirations: Option<ExpirationResponseInner>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 struct ExpirationResponseInner {
-    dates: Vec<String>,
+    date: Vec<String>,
 }

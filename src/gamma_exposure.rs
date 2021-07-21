@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, convert::TryFrom};
 
-use rust_decimal::{Decimal, prelude::FromPrimitive};
+use rust_decimal::{prelude::FromPrimitive, Decimal};
 use serde::{Deserialize, Serialize};
 
 use crate::data_apis::tradier;
@@ -97,13 +97,10 @@ impl GammaExposure {
     }
 }
 
-pub async fn gamma_exposure_by_price(
-    symbol: &str,
-    force_download: bool,
-) -> anyhow::Result<GammaExposureStats> {
+pub async fn gamma_exposure_by_price(symbol: &str) -> anyhow::Result<GammaExposureStats> {
     dotenv::dotenv()?;
 
-    let options = tradier::get_option_chain(&symbol.to_uppercase(), force_download).await?;
+    let options = tradier::get_option_chain(&symbol.to_uppercase()).await?;
 
     let mut strike_to_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
 
@@ -119,7 +116,7 @@ pub async fn gamma_exposure_by_price(
                 None => {
                     strike_to_gamma_exposure.insert(strike, exposure);
                 }
-            }    
+            }
         }
     }
 

@@ -1,10 +1,10 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
-    let params = format!("symbols=${}", symbol);
+    let params = format!("symbols={}", symbol);
     let url = format!("{}/markets/quotes?{}", super::BASE_URL, params);
-    
+
     let client = reqwest::Client::new();
     let body = client
         .get(url)
@@ -16,7 +16,12 @@ pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
         .await?;
 
     let quotes: QuoteResponse = serde_json::from_str(&body)?;
-    let quote = quotes.quotes.quote.into_iter().next().ok_or_else(|| anyhow::anyhow!("No quote"))?;
+    let quote = quotes
+        .quotes
+        .quote
+        .into_iter()
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("No quote"))?;
 
     Ok(quote)
 }
@@ -62,4 +67,3 @@ struct QuoteResponse {
 struct QuoteResponseInner {
     quote: Vec<Quote>,
 }
-

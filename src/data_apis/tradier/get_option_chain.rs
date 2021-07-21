@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-pub async fn get_option_chain(symbol: &str, force_download: bool) -> anyhow::Result<Vec<OptionInfo>> {
+pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<OptionInfo>> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
 
     let expirations = super::get_option_expirations(symbol).await?;
@@ -8,9 +8,9 @@ pub async fn get_option_chain(symbol: &str, force_download: bool) -> anyhow::Res
     let mut result = Vec::new();
 
     for expiration in expirations {
-        let params = format!("symbol={}&expiration={}&greeks=true", symbol, "");
+        let params = format!("symbol={}&expiration={}&greeks=true", symbol, expiration);
         let url = format!("{}/markets/options/chains?{}", super::BASE_URL, params);
-        
+
         let client = reqwest::Client::new();
         let body = client
             .get(url)
@@ -20,7 +20,7 @@ pub async fn get_option_chain(symbol: &str, force_download: bool) -> anyhow::Res
             .await?
             .text()
             .await?;
-    
+
         let response: OptionChainResponse = serde_json::from_str(&body)?;
         result.extend(response.options.option);
     }
