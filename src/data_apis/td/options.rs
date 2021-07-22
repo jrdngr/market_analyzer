@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::deserialize_f64_with_nan;
@@ -25,8 +24,8 @@ pub struct OptionChain {
     #[serde(deserialize_with = "deserialize_f64_with_nan")]
     pub volatility: f64,
     pub number_of_contracts: u64,
-    pub call_exp_date_map: HashMap<String, HashMap<Decimal, Vec<OptionData>>>,
-    pub put_exp_date_map: HashMap<String, HashMap<Decimal, Vec<OptionData>>>,
+    pub call_exp_date_map: HashMap<String, HashMap<String, Vec<OptionData>>>,
+    pub put_exp_date_map: HashMap<String, HashMap<String, Vec<OptionData>>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

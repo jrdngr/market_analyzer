@@ -1,6 +1,5 @@
 use std::{collections::BTreeMap, convert::TryFrom};
 
-use rust_decimal::{prelude::FromPrimitive, Decimal};
 use serde::{Deserialize, Serialize};
 
 use crate::data_apis::tradier;
@@ -20,7 +19,7 @@ pub struct GammaExposureStats {
 }
 
 impl GammaExposureStats {
-    pub fn new(strike_to_gamma_exposure: &BTreeMap<Decimal, f64>) -> anyhow::Result<Self> {
+    pub fn new(strike_to_gamma_exposure: &BTreeMap<String, f64>) -> anyhow::Result<Self> {
         let mut positive_sum: f64 = 0.0;
         let mut positive_count = 0;
         let mut negative_sum: f64 = 0.0;
@@ -28,17 +27,18 @@ impl GammaExposureStats {
         let mut maximum: f64 = 0.0;
         let mut minimum: f64 = 0.0;
         let mut absolute_maximum: f64 = 0.0;
-        let mut weighted_positive_sum = Decimal::ZERO;
-        let mut weighted_negative_sum = Decimal::ZERO;
+        let mut weighted_positive_sum: f64 = 0.0;
+        let mut weighted_negative_sum: f64 = 0.0;
 
         for (strike, exposure) in strike_to_gamma_exposure {
+            let strike: f64 = strike.parse()?;
             if *exposure >= 0.0 {
                 positive_sum += exposure;
-                weighted_positive_sum += strike * Decimal::try_from(*exposure)?;
+                weighted_positive_sum += strike *exposure;
                 positive_count += 1;
             } else {
                 negative_sum += exposure;
-                weighted_negative_sum += strike * Decimal::try_from(*exposure)?;
+                weighted_negative_sum += strike * *exposure;
                 negative_count += 1;
             }
             maximum = maximum.max(*exposure);
@@ -62,10 +62,10 @@ impl GammaExposureStats {
 
         let mut prices: Vec<GammaExposure> = strike_to_gamma_exposure
             .iter()
-            .map(|(strike, exposure)| GammaExposure::new(*strike, *exposure))
+            .map(|(strike, exposure)| GammaExposure::new(strike.clone(), *exposure))
             .collect();
 
-        prices.sort_by_key(|k| k.strike);
+        prices.sort_by(|p1, p2| p1.strike.cmp(&p2.strike));
 
         Ok(Self {
             prices,
@@ -84,12 +84,12 @@ impl GammaExposureStats {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GammaExposure {
-    pub strike: Decimal,
+    pub strike: String,
     pub gamma_exposure: f64,
 }
 
 impl GammaExposure {
-    pub fn new(strike: Decimal, gamma_exposure: f64) -> Self {
+    pub fn new(strike: String, gamma_exposure: f64) -> Self {
         Self {
             strike,
             gamma_exposure,
@@ -105,11 +105,11 @@ pub async fn gamma_exposure_by_price(
 
     let options = tradier::get_option_chain(&symbol.to_uppercase(), force_download).await?;
 
-    let mut strike_to_gamma_exposure: BTreeMap<Decimal, f64> = BTreeMap::new();
+    let mut strike_to_gamma_exposure: BTreeMap<String, f64> = BTreeMap::new();
 
     for option in options {
-        let strike = Decimal::from_f64(option.strike);
-        if let (Some(strike), Some(greeks)) = (strike, option.greeks) {
+        let strike = option.strike.to_string();
+        if let Some(greeks) = option.greeks {
             let mut exposure = greeks.gamma * option.open_interest as f64;
             if option.option_type == "put" {
                 exposure *= -1.0;
