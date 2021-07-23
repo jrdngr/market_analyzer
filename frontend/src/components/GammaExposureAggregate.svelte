@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import GammaExposureChart from './GammaExposureChart.svelte'
+    import GammaExposureChart from './charts/GammaExposureChart.svelte'
     import { getGammaExposureAggregate, getQuote } from '../common/apis/internal';
 
     export let symbol = null;

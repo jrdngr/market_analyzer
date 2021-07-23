@@ -1,5 +1,6 @@
 <script>
-    import GammaExposure from './GammaExposure.svelte';
+    // import GammaExposure from './GammaExposure.svelte';
+    import GammaMap from './GammaMap.svelte';
 
     let symbol = "SPX";
     let submittedSymbol = null;
@@ -17,7 +18,8 @@ Symbol:
 
 {#key submittedSymbol}
     {#if submittedSymbol}
-        <GammaExposure bind:symbol={submittedSymbol}/>
+        <!-- <GammaExposure bind:symbol={submittedSymbol}/> -->
+        <GammaMap bind:symbol={submittedSymbol}/>
     {/if}
 {/key}
 
