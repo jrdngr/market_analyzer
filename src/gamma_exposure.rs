@@ -110,7 +110,11 @@ pub async fn gamma_exposure_by_price(
     for option in options {
         let strike = option.strike.to_string();
         if let Some(greeks) = option.greeks {
-            let mut exposure = greeks.gamma * option.open_interest as f64;
+            let mut exposure = if greeks.gamma > 1.0 || greeks.gamma < -1.0 {
+                0.0
+            } else {
+                greeks.gamma * option.open_interest as f64
+            };
             if option.option_type == "put" {
                 exposure *= -1.0;
             }
