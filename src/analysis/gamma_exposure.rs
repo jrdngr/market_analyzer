@@ -1,8 +1,12 @@
-use std::{collections::BTreeMap, convert::TryFrom};
+use std::{
+    collections::{BTreeMap, HashSet},
+    convert::TryFrom,
+};
 
+use chrono::{Date, Local, TimeZone};
 use serde::{Deserialize, Serialize};
 
-use crate::data_apis::tradier;
+use crate::{data_apis::tradier, math::bs::gamma};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GammaExposureStats {
@@ -34,7 +38,7 @@ impl GammaExposureStats {
             let strike: f64 = strike.parse()?;
             if *exposure >= 0.0 {
                 positive_sum += exposure;
-                weighted_positive_sum += strike *exposure;
+                weighted_positive_sum += strike * exposure;
                 positive_count += 1;
             } else {
                 negative_sum += exposure;
@@ -100,9 +104,7 @@ impl GammaExposure {
 pub async fn gamma_exposure_by_price(
     symbol: &str,
     force_download: bool,
-) -> anyhow::Result<GammaExposureStats> {
-    dotenv::dotenv()?;
-
+) -> anyhow::Result<BTreeMap<String, f64>> {
     let options = tradier::get_option_chain(&symbol.to_uppercase(), force_download).await?;
 
     let mut strike_to_gamma_exposure: BTreeMap<String, f64> = BTreeMap::new();
@@ -127,5 +129,83 @@ pub async fn gamma_exposure_by_price(
         }
     }
 
+    Ok(strike_to_gamma_exposure)
+}
+
+pub async fn gamma_exposure_stats(
+    symbol: &str,
+    force_download: bool,
+) -> anyhow::Result<GammaExposureStats> {
+    let strike_to_gamma_exposure = gamma_exposure_by_price(symbol, force_download).await?;
     Ok(GammaExposureStats::new(&strike_to_gamma_exposure)?)
+}
+
+pub async fn gamma_exposure_aggregate(
+    symbol: &str,
+    force_download: bool,
+) -> anyhow::Result<BTreeMap<String, f64>> {
+    let options = tradier::get_option_chain(&symbol.to_uppercase(), force_download).await?;
+
+    let now = Local::now().date();
+    let mut strike_to_gamma_exposure_aggregate: BTreeMap<String, f64> = BTreeMap::new();
+
+    let strikes: Vec<f64> = options
+        .iter()
+        .map(|o| (o.strike * 100.0) as u64)
+        .collect::<HashSet<u64>>()
+        .into_iter()
+        .map(|s| s as f64 / 100.0)
+        .collect();
+
+    for option in options {
+        let expiration_date = parse_date(&option.expiration_date)?;
+        let days_remaining = expiration_date.signed_duration_since(now).num_days();
+
+        let sigma = option.greeks.map(|g| g.mid_iv).unwrap_or(0.0);
+        let expiration_time = days_remaining as f64 / 365.0;
+        let current_time = 0.0;
+        let strike = option.strike;
+
+        let strike_string = option.strike.to_string();
+
+        for price in &strikes {
+            let gamma = gamma(sigma, expiration_time, current_time, *price, strike);
+
+            let mut exposure = if gamma > 1.0 || gamma < -1.0 {
+                0.0
+            } else {
+                gamma * option.open_interest as f64
+            };
+            if option.option_type == "put" {
+                exposure *= -1.0;
+            }
+            match strike_to_gamma_exposure_aggregate.get_mut(&strike_string) {
+                Some(exp) => *exp += exposure,
+                None => {
+                    strike_to_gamma_exposure_aggregate.insert(strike_string.clone(), exposure);
+                }
+            }
+        }
+    }
+
+    Ok(strike_to_gamma_exposure_aggregate)
+}
+
+fn parse_date(date: &str) -> anyhow::Result<Date<Local>> {
+    let mut split_date = date.split("-");
+
+    let y: i32 = split_date
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("Invalid year"))?
+        .parse()?;
+    let m: u32 = split_date
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("Invalid month"))?
+        .parse()?;
+    let d: u32 = split_date
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("Invalid day"))?
+        .parse()?;
+
+    Ok(Local.ymd(y, m, d))
 }

@@ -24,6 +24,10 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::path!("gamma" / String / "fresh"))
         .and_then(handle_gamma_exposure_fresh);
 
+    let gamma_exposure_aggregate = warp::get()
+        .and(warp::path!("gamma" / String / "aggregate"))
+        .and_then(handle_gamma_exposure_aggregate);
+
     let quote = warp::get()
         .and(warp::path!("quote" / String))
         .and_then(handle_quote);
@@ -32,7 +36,10 @@ async fn main() -> anyhow::Result<()> {
         .allow_any_origin()
         .allow_methods(vec!["GET", "POST", "PUT"]);
 
-    let routes = gamma_exposure.or(gamma_exposure_fresh).or(quote);
+    let routes = gamma_exposure
+        .or(gamma_exposure_fresh)
+        .or(gamma_exposure_aggregate)
+        .or(quote);
 
     warp::serve(routes.recover(handle_rejection).with(cors))
         .run(([127, 0, 0, 1], 3030))
@@ -42,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn handle_gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejection> {
-    match analysis::gamma_exposure::gamma_exposure_by_price(&symbol, false).await {
+    match analysis::gamma_exposure::gamma_exposure_stats(&symbol, false).await {
         Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
         Err(err) => {
             log::error!("{:?}", err);
@@ -52,7 +59,17 @@ async fn handle_gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejec
 }
 
 async fn handle_gamma_exposure_fresh(symbol: String) -> Result<impl warp::Reply, Rejection> {
-    match analysis::gamma_exposure::gamma_exposure_by_price(&symbol, true).await {
+    match analysis::gamma_exposure::gamma_exposure_stats(&symbol, true).await {
+        Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
+        Err(err) => {
+            log::error!("{:?}", err);
+            Err(warp::reject::not_found())
+        }
+    }
+}
+
+async fn handle_gamma_exposure_aggregate(symbol: String) -> Result<impl warp::Reply, Rejection> {
+    match analysis::gamma_exposure::gamma_exposure_aggregate(&symbol, false).await {
         Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
         Err(err) => {
             log::error!("{:?}", err);
