@@ -1,5 +1,4 @@
 /data
-/reports
 /target
 .env
 Cargo.lock
