@@ -1,5 +1,6 @@
+pub mod analysis;
 pub mod data_apis;
-pub mod gamma_exposure;
+pub mod math;
 pub mod utils;
 
 use data_apis::tradier;
@@ -41,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn handle_gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejection> {
-    match gamma_exposure::gamma_exposure_by_price(&symbol, false).await {
+    match analysis::gamma_exposure::gamma_exposure_by_price(&symbol, false).await {
         Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
         Err(err) => {
             log::error!("{:?}", err);
@@ -51,7 +52,7 @@ async fn handle_gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejec
 }
 
 async fn handle_gamma_exposure_fresh(symbol: String) -> Result<impl warp::Reply, Rejection> {
-    match gamma_exposure::gamma_exposure_by_price(&symbol, true).await {
+    match analysis::gamma_exposure::gamma_exposure_by_price(&symbol, true).await {
         Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
         Err(err) => {
             log::error!("{:?}", err);
