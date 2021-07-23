@@ -21,9 +21,6 @@
         minPrice = data.quote.week_52_low - priceOffset;
         maxPrice = data.quote.week_52_high + priceOffset;
         
-        data.minPrice = minPrice;
-        data.maxPrice = maxPrice;
-
         setData(data);
     });
 
@@ -32,9 +29,12 @@
 
         reducedData.prices = reducedData.prices
             .filter(d => d.strike >= minPrice && d.strike <= maxPrice);
-
+            
         minPrice = Math.min(...reducedData.prices.map(d => d.strike));
         maxPrice = Math.max(...reducedData.prices.map(d => d.strike));
+
+        reducedData.minPrice = minPrice;
+        reducedData.maxPrice = maxPrice;
     }
     
     function handleWheel(e) {
@@ -59,12 +59,29 @@
 
         setData(data)
     }
+
+    function handleMouseMove(e) {
+        if (e.buttons === 1) {
+            if (e.movementY > 0) {
+                maxPrice += 1;
+                minPrice += 1;
+            } else if (e.movementY < 0) {
+                maxPrice -= 1;
+                minPrice -= 1;
+            }
+
+            minPrice = Math.max(minPrice, 0);
+            maxPrice = Math.min(maxPrice, data.quote.week_52_high * data.quote.last * 1.10);
+
+            setData(data)
+        }
+    }
 </script>
 
 <main>
     <div class="charts">
         {#if reducedData}
-        <div on:wheel={handleWheel}>
+        <div on:wheel={handleWheel} on:mousemove={handleMouseMove}>
             <GammaMapChart bind:data={reducedData}/>
         </div>
         {/if}

@@ -44,16 +44,20 @@
             .attr("font-size", "1em");
 
         if (data.quote.last >= data.minPrice && data.quote.last <= data.maxPrice) {
+            const yPrice = d3.scaleLinear()
+                .domain([data.minPrice, data.maxPrice])
+                .range([height - margin.bottom, margin.top]);
+
             svg.append("g")
-            .selectAll("rect")
-            .data([data.quote.last])
-            .join("rect")
-            .attr("class", "price")
-            .attr("x", margin.left)
-            .attr("y", d => y(nearestStrike(d)) - (y.bandwidth() / 3))
-            .attr("height", y.bandwidth() / 3)
-            .attr("width", width)
-            .attr("fill", "steelblue");
+                .selectAll("rect")
+                .data([data.quote.last])
+                .join("rect")
+                .attr("class", "price")
+                .attr("x", margin.left)
+                .attr("y", d => yPrice(d))
+                .attr("height", y.bandwidth() / 2)
+                .attr("width", width)
+                .attr("fill", "steelblue");
         }
 
         el.append(svg.node());
@@ -89,27 +93,6 @@
 
         return rgbaToHex(r, g, b, a);
     }
-
-    function nearestStrike(price) {
-        let nearest = null;
-        let distance = null;
-
-        for (const strike of data.prices.map(d => d.strike)) {
-            let d = Math.abs(strike - price);
-            if (!nearest || !distance) {
-                nearest = strike;
-                distance = d;
-            } else if (d < distance) {
-                distance = d;
-                nearest = strike;
-            }
-        }
-
-        console.log(nearest);
-
-        return nearest;
-    }
-
 </script>
 
 <main>
