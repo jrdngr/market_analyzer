@@ -1,6 +1,5 @@
 <script>
     import GammaExposure from './GammaExposure.svelte';
-    import GammaPrice from './GammaPrice.svelte';
 
     let symbol = "SPX";
     let submittedSymbol = null;
@@ -19,7 +18,6 @@ Symbol:
 {#key submittedSymbol}
     {#if submittedSymbol}
         <GammaExposure bind:symbol={submittedSymbol}/>
-        <!-- <GammaPrice bind:symbol={submittedSymbol}/> -->
     {/if}
 {/key}
 

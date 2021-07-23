@@ -1,7 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import GammaExposureChart from './GammaExposureChart.svelte'
-    import { getOptionChain, getQuote } from '../common/apis/internal';
+    import { getGammaExposureStats, getQuote } from '../common/apis/internal';
 
     export let symbol = null;
 
@@ -13,7 +13,7 @@
 
 	onMount(async () => {
         console.log("Fetching data");
-        const optionsData = await getOptionChain(symbol);
+        const optionsData = await getGammaExposureStats(symbol);
         const quote = await getQuote(symbol);
         optionsData.quote = quote;
 
@@ -86,7 +86,6 @@
             <GammaExposureChart bind:data={reducedData}/>
         {/if}
     </div>
-
 </main>
 
 <style>

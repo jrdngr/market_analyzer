@@ -143,7 +143,7 @@ pub async fn gamma_exposure_stats(
 pub async fn gamma_exposure_aggregate(
     symbol: &str,
     force_download: bool,
-) -> anyhow::Result<BTreeMap<String, f64>> {
+) -> anyhow::Result<GammaExposureStats> {
     let options = tradier::get_option_chain(&symbol.to_uppercase(), force_download).await?;
 
     let now = Local::now().date();
@@ -171,7 +171,7 @@ pub async fn gamma_exposure_aggregate(
         for price in &strikes {
             let gamma = gamma(sigma, expiration_time, current_time, *price, strike);
 
-            let mut exposure = if gamma > 1.0 || gamma < -1.0 {
+            let mut exposure = if gamma > 1.0 || gamma < -1.0  || gamma.is_nan() {
                 0.0
             } else {
                 gamma * option.open_interest as f64
@@ -188,7 +188,9 @@ pub async fn gamma_exposure_aggregate(
         }
     }
 
-    Ok(strike_to_gamma_exposure_aggregate)
+    // dbg!(&strike_to_gamma_exposure_aggregate);
+
+    Ok(GammaExposureStats::new(&strike_to_gamma_exposure_aggregate)?)
 }
 
 fn parse_date(date: &str) -> anyhow::Result<Date<Local>> {

@@ -1,22 +1,26 @@
 <script>
     import { onMount } from 'svelte';
-    import GammaPriceChart from './GammaPriceChart.svelte'
-    import { getOptionChain, getQuote } from '../common/apis/td';
+    import GammaExposureChart from './GammaExposureChart.svelte'
+    import { getGammaExposureAggregate, getQuote } from '../common/apis/internal';
+
     export let symbol = null;
 
     let minStrike = 0;
     let maxStrike = 0;
     let data = null;
     let reducedData = null;
-    let percentileFilter = 0.3;
+    let percentileFilter = 0.0;
 
 	onMount(async () => {
         console.log("Fetching data");
-        const data = await getOptionChain(symbol);
+        const optionsData = await getGammaExposureAggregate(symbol);
         const quote = await getQuote(symbol);
-        data.quote = quote;
-        minStrike = quote[symbol.toUpperCase()].lastPrice - 20;
-        maxStrike = quote[symbol.toUpperCase()].lastPrice + 20;
+        optionsData.quote = quote;
+
+        data = optionsData;
+
+        centerOnPrice(data);
+
         setData(data);
     });
 
@@ -31,19 +35,34 @@
     function setData(data) {
         reducedData = Object.assign({}, data);
 
-        // Trim leading and trailer GE = 0
         reducedData = reducedData.prices
             .map(d => Object.assign({}, d))
             .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
-            
+
         reducedData.forEach(d => {
-            if (Math.abs(d.gammaExposure) < data.absoluteMaximum * percentileFilter) {
-                d.gammaExposure = 0;
+            if (Math.abs(d.gamma_exposure) < data.absolute_maximum * percentileFilter) {
+                d.gamma_exposure = 0;
             }
         });
 
         minStrike = Math.min(...reducedData.map(d => d.strike));
         maxStrike = Math.max(...reducedData.map(d => d.strike));
+    }
+
+    function centerOnPrice(data) {
+        const price = data.quote.last;
+        const offsetDigits = Math.floor(Math.log10(price)) - 1;
+        
+        if (offsetDigits < 0) {
+            minStrike = Math.min(...data.prices.map(d => d.strike));
+            maxStrike = Math.max(...data.prices.map(d => d.strike));
+            return;
+        }
+
+        const offset = 2 * Math.pow(10, offsetDigits);
+
+        minStrike = price - offset;
+        maxStrike = price + offset;
     }
 </script>
 
@@ -63,18 +82,18 @@
 
     <div class="charts">
         {#if data}
-            <GammaPriceChart bind:data={reducedData}/>
+            <p>Last: {data.quote.last} | Mid: {data.weighted_average_absolute_price}</p>
+            <GammaExposureChart bind:data={reducedData}/>
         {/if}
     </div>
-
 </main>
 
 <style>
     .controls input {
-        width: 100px;
+        width: 150px;
     }
 
     .charts {
-        width: 50%;
+        width: 80%;
     }
 </style>
