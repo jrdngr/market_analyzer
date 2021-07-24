@@ -11,7 +11,7 @@
     let minPrice = 0;
     let maxPrice = 0;
 
-    let brightness = 1.0;
+    let brightness = 10;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -40,58 +40,24 @@
         reducedData.brightness = brightness;
     }
     
-    function handleWheel(e) {
-        e.preventDefault();
-
-        const priceOffset = data.quote.last * 0.02;
-
-        if (e.deltaY > 0) {
-            maxPrice += priceOffset;
-            minPrice -= priceOffset;
-        }
-        if (e.deltaY < 0) {
-            if (maxPrice - minPrice < data.quote.last * 0.05) {
-                return;
-            }
-            maxPrice -= priceOffset;
-            minPrice += priceOffset;
-        }
-
-        minPrice = Math.max(minPrice, 0);
-        maxPrice = Math.min(maxPrice, data.quote.week_52_high * data.quote.last * 1.10);
-
-        setData(data)
+    function updateMinMaxPrice() {
+        setData(data);
     }
 
     function updateBrightness() {
         setData(data);
     }
-
-    function handleMouseMove(e) {
-        if (e.buttons === 1) {
-            if (e.movementY > 0) {
-                maxPrice += 1;
-                minPrice += 1;
-            } else if (e.movementY < 0) {
-                maxPrice -= 1;
-                minPrice -= 1;
-            }
-
-            minPrice = Math.max(minPrice, 0);
-            maxPrice = Math.min(maxPrice, data.quote.week_52_high * data.quote.last * 1.10);
-
-            setData(data)
-        }
-    }
 </script>
 
 <main>
     <div class="controls">
+        Min Price: <input type=number bind:value={minPrice} min=0 step=5 on:change={updateMinMaxPrice}>
+        Max Price: <input type=number bind:value={maxPrice} min=0 step=5 on:change={updateMinMaxPrice}>
         Brightness: <input 
             type=number 
             bind:value={brightness} 
-            min=1 
-            max=10 
+            min=0
+            max=100 
             step=1
             on:change={updateBrightness}
         >
@@ -99,7 +65,7 @@
 
     <div class="charts">
         {#if reducedData}
-        <div on:wheel={handleWheel} on:mousemove={handleMouseMove}>
+        <div>
             <GammaMapChart bind:data={reducedData}/>
         </div>
         {/if}

@@ -57,7 +57,7 @@
                 .attr("y", d => yPrice(d))
                 .attr("height", y.bandwidth() / 2)
                 .attr("width", width)
-                .attr("fill", "steelblue");
+                .attr("fill", "yellow");
         }
 
         el.append(svg.node());
@@ -71,7 +71,8 @@
     }
 
     function scaleAlpha(alpha) {
-        return data.brightness * alpha;
+        const brightness = data.brightness / 100;
+        return Math.min(alpha + brightness, 1.0);
     }
 
     function getColor(point) {
