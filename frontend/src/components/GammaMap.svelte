@@ -11,6 +11,8 @@
     let minPrice = 0;
     let maxPrice = 0;
 
+    let brightness = 1.0;
+
 	onMount(async () => {
         console.log("Fetching data");
         data = await getGammaExposureStats(symbol);
@@ -35,6 +37,7 @@
 
         reducedData.minPrice = minPrice;
         reducedData.maxPrice = maxPrice;
+        reducedData.brightness = brightness;
     }
     
     function handleWheel(e) {
@@ -60,6 +63,10 @@
         setData(data)
     }
 
+    function updateBrightness() {
+        setData(data);
+    }
+
     function handleMouseMove(e) {
         if (e.buttons === 1) {
             if (e.movementY > 0) {
@@ -79,6 +86,17 @@
 </script>
 
 <main>
+    <div class="controls">
+        Brightness: <input 
+            type=number 
+            bind:value={brightness} 
+            min=1 
+            max=10 
+            step=1
+            on:change={updateBrightness}
+        >
+    </div>
+
     <div class="charts">
         {#if reducedData}
         <div on:wheel={handleWheel} on:mousemove={handleMouseMove}>
@@ -89,6 +107,10 @@
 </main>
 
 <style>
+    .controls input {
+        width: 150px;
+    }
+
     .charts {
         width: 80%;
     }

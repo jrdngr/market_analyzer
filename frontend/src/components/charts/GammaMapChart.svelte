@@ -71,7 +71,7 @@
     }
 
     function scaleAlpha(alpha) {
-        return alpha;
+        return data.brightness * alpha;
     }
 
     function getColor(point) {
