@@ -1,29 +1,42 @@
 <script>
-    // import GammaExposure from './GammaExposure.svelte';
+    import GammaExposure from './GammaExposure.svelte';
     import GammaMap from './GammaMap.svelte';
 
     let symbol = "SPY";
-    let submittedSymbol = null;
     let aggregate = false;
 
-    async function handleSubmit() {
-        submittedSymbol = symbol;
-	}
+    let charts = [];
+
+    function addExposureChart() {
+        addChart("exposure");
+    }
+
+    function addGammaMap() {
+        addChart("map");
+    }
+
+    function addChart(type) {
+        charts = [ ...charts, { type, symbol, aggregate } ];
+    }
 </script>
 
 Symbol:
 <input bind:value={symbol}>
 <input type=checkbox bind:checked={aggregate}> Aggregate
-<button on:click={handleSubmit}>
-    Submit
+<button on:click={addGammaMap}>
+    Map
+</button>
+<button on:click={addExposureChart}>
+    Exposure
 </button>
 
-{#key submittedSymbol}
-    {#if submittedSymbol}
-        <!-- <GammaExposure bind:symbol={submittedSymbol} bind:aggregate={aggregate}/> -->
-        <GammaMap bind:symbol={submittedSymbol} bind:aggregate={aggregate}/>
+{#each charts as chart}
+    {#if chart.type === "exposure"}
+        <GammaExposure bind:symbol={chart.symbol} bind:aggregate={chart.aggregate}/>
+    {:else if chart.type === "map"}
+        <GammaMap bind:symbol={chart.symbol} bind:aggregate={chart.aggregate}/>
     {/if}
-{/key}
+{/each}
 
 <style>
 </style>
