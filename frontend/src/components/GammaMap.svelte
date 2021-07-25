@@ -55,6 +55,24 @@
     function updateBrightness() {
         setData(data);
     }
+
+    function lowHighPrice() {
+        let low;
+        let high = 0;
+        for (const slice of data.ohlc) {
+            if (!low) {
+                low = slice.low;
+            }
+            if (slice.low < low) {
+                low = slice.low;
+            }
+            if (slice.high > high) {
+                high = slice.high
+            }
+        }
+
+        return [low, high]
+    }
 </script>
 
 <main>

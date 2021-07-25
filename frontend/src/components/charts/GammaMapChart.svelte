@@ -17,9 +17,17 @@
 
         d3.select(el).style("background", "black");
 
+        const x = d3.scaleTime()
+            .domain([new Date("2021-07-23T09:00"), new Date("2021-07-23T21:00")])
+            .range([margin.left, width - margin.right]);
+
+        const xAxis = g => g
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(d3.axisBottom(x).tickSizeOuter(0));
+
         const y = d3.scaleLinear()
             .domain([minPrice, maxPrice])
-            .range([height - margin.bottom, margin.top]);
+            .rangeRound([height - margin.bottom, margin.top]);
 
         const yAxis = g => g
             .attr("transform", `translate(${margin.left},0)`)
@@ -28,6 +36,10 @@
 
         const svg = d3.create("svg")
             .attr("viewBox", [0, 0, width, height]);
+
+        /* 
+         * Draw background
+         */
 
         svg.append("g")
             .selectAll("rect")
@@ -40,6 +52,14 @@
             .attr("fill", getColor);
 
         svg.append("g")
+            .call(xAxis)
+            .selectAll("text")
+            .data(data)
+            .attr("transform", "translate(12,25) rotate(90)")
+            .attr("fill", "white")
+            .attr("font-size", "1em");
+        
+        svg.append("g")
             .call(yAxis)
             .selectAll("text")
             .attr("fill", "white")
@@ -49,16 +69,43 @@
             .domain([minPrice, maxPrice])
             .range([height - margin.bottom, margin.top]);
 
+        /* 
+         * Draw current price
+         */
         svg.append("g")
             .selectAll("rect")
             .data([data.quote.last])
             .join("rect")
             .attr("class", "price")
             .attr("x", margin.left)
-            .attr("y", d => yPrice(d) -0.5)
+            .attr("y", d => yPrice(d) - 0.5)
             .attr("height", 1)
             .attr("width", width)
             .attr("fill", "yellow");
+
+        /* 
+         * Draw price chart
+         */
+        svg.append("g")
+            .selectAll("rect")
+            .data(data.ohlc)
+            .join("rect")
+            .attr("x", d => x(new Date(d.time)))
+            .attr("y", d => y(Math.min(d.open, d.close)))
+            .attr("width", 3)
+            .attr("height", d => Math.abs(y(d.open) - y(d.close)))
+            .attr("fill", "steelblue");
+
+        svg.append("g")
+            .selectAll("rect")
+            .data(data.ohlc)
+            .join("rect")
+            .attr("x", d => x(new Date(d.time)))
+            .attr("y", d => y(d.low))
+            .attr("width", 1)
+            .attr("height", d => Math.abs(y(d.high) - y(d.low)))
+            .attr("fill", "steelblue");
+
 
         el.append(svg.node());
     });

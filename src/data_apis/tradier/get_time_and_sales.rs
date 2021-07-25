@@ -1,12 +1,20 @@
 use std::str::FromStr;
 
+use chrono::{Datelike, Duration, Local};
 use serde::{Deserialize, Serialize};
 
 pub async fn get_time_and_sales(symbol: &str, interval: &str) -> anyhow::Result<Vec<TimeAndSales>> {
     let interval = TimeAndSalesInterval::from_str(interval)?;
 
+    let lookback_days = match Local::now().weekday() {
+        chrono::Weekday::Sun => 3,
+        chrono::Weekday::Sat => 2,
+        _ => 1,
+    };
+    let start = (Local::now() - Duration::days(lookback_days)).format("%Y-%m-%d %H:%M").to_string();
+    
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
-    let params = format!("symbol={}&interval={}", symbol, interval);
+    let params = format!("symbol={}&interval={}&start={}", symbol, interval, start);
     let url = format!("{}/markets/timesales?{}", super::BASE_URL, params);
 
     let client = reqwest::Client::new();
