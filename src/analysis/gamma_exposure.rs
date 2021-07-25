@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::BTreeMap,
     convert::TryFrom,
 };
 
@@ -149,13 +149,20 @@ pub async fn gamma_exposure_aggregate(
     let now = Local::now().date();
     let mut strike_to_gamma_exposure_aggregate: BTreeMap<String, f64> = BTreeMap::new();
 
-    let strikes: Vec<f64> = options
+    let min_strike = options
         .iter()
-        .map(|o| (o.strike * 100.0) as u64)
-        .collect::<HashSet<u64>>()
-        .into_iter()
-        .map(|s| s as f64 / 100.0)
-        .collect();
+        .map(|o| o.strike)
+        .min_by(|s1, s2| s1.partial_cmp(s2).unwrap_or(std::cmp::Ordering::Less))
+        .unwrap_or(0.0);
+
+    let max_strike = options
+        .iter()
+        .map(|o| o.strike)
+        .max_by(|s1, s2| s1.partial_cmp(s2).unwrap_or(std::cmp::Ordering::Less))
+        .unwrap_or(0.0);
+
+    let max_price = max_strike + min_strike;
+    let price_offset = 0.5;
 
     for option in options {
         let expiration_date = parse_date(&option.expiration_date)?;
@@ -166,10 +173,10 @@ pub async fn gamma_exposure_aggregate(
         let current_time = 0.0;
         let strike = option.strike;
 
-        let strike_string = option.strike.to_string();
-
-        for price in &strikes {
-            let gamma = gamma(sigma, expiration_time, current_time, *price, strike);
+        let mut price = 0.0;
+        while price <= max_price {
+            let price_string = price.to_string();
+            let gamma = gamma(sigma, expiration_time, current_time, price, strike);
 
             let mut exposure = if gamma > 1.0 || gamma < -1.0  || gamma.is_nan() {
                 0.0
@@ -179,12 +186,14 @@ pub async fn gamma_exposure_aggregate(
             if option.option_type == "put" {
                 exposure *= -1.0;
             }
-            match strike_to_gamma_exposure_aggregate.get_mut(&strike_string) {
+            match strike_to_gamma_exposure_aggregate.get_mut(&price_string) {
                 Some(exp) => *exp += exposure,
                 None => {
-                    strike_to_gamma_exposure_aggregate.insert(strike_string.clone(), exposure);
+                    strike_to_gamma_exposure_aggregate.insert(price_string.clone(), exposure);
                 }
             }
+
+            price += price_offset;
         }
     }
 

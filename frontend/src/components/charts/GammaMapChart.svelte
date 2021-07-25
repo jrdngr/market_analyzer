@@ -45,22 +45,20 @@
             .attr("fill", "white")
             .attr("font-size", "1em");
 
-        // if (data.quote.last >= minPrice && data.quote.last <= maxPrice) {
-        //     const yPrice = d3.scaleLinear()
-        //         .domain([minPrice, maxPrice])
-        //         .range([height - margin.bottom, margin.top]);
+        const yPrice = d3.scaleLinear()
+            .domain([minPrice, maxPrice])
+            .range([height - margin.bottom, margin.top]);
 
-        //     svg.append("g")
-        //         .selectAll("rect")
-        //         .data([data.quote.last])
-        //         .join("rect")
-        //         .attr("class", "price")
-        //         .attr("x", margin.left)
-        //         .attr("y", d => yPrice(d))
-        //         .attr("height", y.bandwidth() / 2)
-        //         .attr("width", width)
-        //         .attr("fill", "yellow");
-        // }
+        svg.append("g")
+            .selectAll("rect")
+            .data([data.quote.last])
+            .join("rect")
+            .attr("class", "price")
+            .attr("x", margin.left)
+            .attr("y", d => yPrice(d) -0.5)
+            .attr("height", 1)
+            .attr("width", width)
+            .attr("fill", "yellow");
 
         el.append(svg.node());
     });
