@@ -11,17 +11,19 @@
         const width = 800;
         const height = 500;
 
+        const [minPrice, maxPrice] = d3.extent(data.prices, d => d.strike);
+
         el.textContent = "";
 
         d3.select(el).style("background", "black");
 
-        const y = d3.scaleBand()
-            .domain(data.prices.map(d => d.strike))
+        const y = d3.scaleLinear()
+            .domain([minPrice, maxPrice])
             .range([height - margin.bottom, margin.top]);
 
         const yAxis = g => g
             .attr("transform", `translate(${margin.left},0)`)
-            .call(d3.axisLeft(y).ticks(10))
+            .call(d3.axisLeft(y))
             .call(g => g.select(".domain").remove());
 
         const svg = d3.create("svg")
@@ -32,8 +34,8 @@
             .data(data.prices)
             .join("rect")
             .attr("x", margin.left)
-            .attr("y", d => y(d.strike))
-            .attr("height", y.bandwidth())
+            .attr("y", d => y(d.strike) - 0.5)
+            .attr("height", 1)
             .attr("width", width)
             .attr("fill", getColor);
 
@@ -43,22 +45,22 @@
             .attr("fill", "white")
             .attr("font-size", "1em");
 
-        if (data.quote.last >= data.minPrice && data.quote.last <= data.maxPrice) {
-            const yPrice = d3.scaleLinear()
-                .domain([data.minPrice, data.maxPrice])
-                .range([height - margin.bottom, margin.top]);
+        // if (data.quote.last >= minPrice && data.quote.last <= maxPrice) {
+        //     const yPrice = d3.scaleLinear()
+        //         .domain([minPrice, maxPrice])
+        //         .range([height - margin.bottom, margin.top]);
 
-            svg.append("g")
-                .selectAll("rect")
-                .data([data.quote.last])
-                .join("rect")
-                .attr("class", "price")
-                .attr("x", margin.left)
-                .attr("y", d => yPrice(d))
-                .attr("height", y.bandwidth() / 2)
-                .attr("width", width)
-                .attr("fill", "yellow");
-        }
+        //     svg.append("g")
+        //         .selectAll("rect")
+        //         .data([data.quote.last])
+        //         .join("rect")
+        //         .attr("class", "price")
+        //         .attr("x", margin.left)
+        //         .attr("y", d => yPrice(d))
+        //         .attr("height", y.bandwidth() / 2)
+        //         .attr("width", width)
+        //         .attr("fill", "yellow");
+        // }
 
         el.append(svg.node());
     });

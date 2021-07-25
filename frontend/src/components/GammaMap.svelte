@@ -1,9 +1,10 @@
 <script>
     import { onMount } from 'svelte';
     import GammaMapChart from './charts/GammaMapChart.svelte'
-    import { getGammaExposureStats, getOhlc, getQuote } from '../common/apis/internal';
+    import { getGammaExposureStats, getGammaExposureAggregate, getOhlc, getQuote } from '../common/apis/internal';
 
     export let symbol = null;
+    export let aggregate = false;
 
     let data = null;
     let reducedData = null;
@@ -15,14 +16,18 @@
 
 	onMount(async () => {
         console.log("Fetching data");
-        data = await getGammaExposureStats(symbol);
+
+        if (aggregate) {
+            data = await getGammaExposureAggregate(symbol);
+        } else {
+            data = await getGammaExposureStats(symbol);
+        }
         
         const quote = await getQuote(symbol);
         data.quote = quote;
 
         const ohlc = await getOhlc(symbol, "5min");
         data.ohlc = ohlc;
-        console.log(ohlc);
 
         const priceOffset = data.quote.last * .10;
         minPrice = data.quote.week_52_low - priceOffset;
@@ -40,8 +45,6 @@
         minPrice = Math.min(...reducedData.prices.map(d => d.strike));
         maxPrice = Math.max(...reducedData.prices.map(d => d.strike));
 
-        reducedData.minPrice = minPrice;
-        reducedData.maxPrice = maxPrice;
         reducedData.brightness = brightness;
     }
     
