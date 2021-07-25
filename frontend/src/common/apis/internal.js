@@ -17,3 +17,9 @@ export async function getQuote(symbol) {
     const data = await (await fetch(url)).json();
     return data;
 }
+
+export async function getOhlc(symbol, interval) {
+    const url = `${BASE_URL}/ohlc/${symbol}/${interval}`;
+    const data = await (await fetch(url)).json();
+    return data;
+}

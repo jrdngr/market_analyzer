@@ -4,7 +4,7 @@ pub mod math;
 pub mod utils;
 
 use data_apis::tradier;
-use std::convert::Infallible;
+use std::{convert::Infallible};
 use warp::{http::StatusCode, Filter, Rejection};
 
 #[tokio::main]
@@ -32,6 +32,10 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::path!("quote" / String))
         .and_then(handle_quote);
 
+    let ohlc = warp::get()
+        .and(warp::path!("ohlc" / String / String))
+        .and_then(handle_ohlc);
+
     let cors = warp::cors()
         .allow_any_origin()
         .allow_methods(vec!["GET", "POST", "PUT"]);
@@ -39,7 +43,8 @@ async fn main() -> anyhow::Result<()> {
     let routes = gamma_exposure
         .or(gamma_exposure_fresh)
         .or(gamma_exposure_aggregate)
-        .or(quote);
+        .or(quote)
+        .or(ohlc);
 
     warp::serve(routes.recover(handle_rejection).with(cors))
         .run(([127, 0, 0, 1], 3030))
@@ -80,6 +85,16 @@ async fn handle_gamma_exposure_aggregate(symbol: String) -> Result<impl warp::Re
 
 async fn handle_quote(symbol: String) -> Result<impl warp::Reply, Rejection> {
     match tradier::get_quote(&symbol).await {
+        Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
+        Err(err) => {
+            log::error!("{:?}", err);
+            Err(warp::reject::not_found())
+        }
+    }
+}
+
+async fn handle_ohlc(symbol: String, interval: String) -> Result<impl warp::Reply, Rejection> {
+    match tradier::get_time_and_sales(&symbol, &interval).await {
         Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
         Err(err) => {
             log::error!("{:?}", err);
