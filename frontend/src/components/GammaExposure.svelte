@@ -20,7 +20,7 @@
         } else {
             optionsData = await getGammaExposureStats(symbol);
         }
-        
+
         const quote = await getQuote(symbol);
         optionsData.quote = quote;
 
@@ -91,7 +91,7 @@
 
     <div class="charts">
         {#if data}
-            <p>Last: {data.quote.last} | Mid: {data.weighted_average_absolute_price}</p>
+            <p>Last: {data.quote.last} | Mid: {data.weighted_average_absolute_price} | Price @ Minimum {data.absolute_minimum_price}</p>
             <GammaExposureChart bind:data={reducedData}/>
         {/if}
     </div>

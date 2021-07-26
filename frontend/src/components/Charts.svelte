@@ -2,7 +2,9 @@
     import GammaExposure from './GammaExposure.svelte';
     import GammaMap from './GammaMap.svelte';
 
-    let symbol = "SPY";
+    const LAST_SEARCHED_KEY = "lastSearchedSymbol";
+
+    let symbol = localStorage.getItem(LAST_SEARCHED_KEY) || "SPY";
     let aggregate = false;
 
     let charts = [];
@@ -17,6 +19,11 @@
 
     function addChart(type) {
         charts = [ ...charts, { type, symbol, aggregate } ];
+        storeLastSearched();
+    }
+
+    function storeLastSearched() {
+        localStorage.setItem(LAST_SEARCHED_KEY, symbol);
     }
 </script>
 

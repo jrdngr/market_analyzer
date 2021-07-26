@@ -17,9 +17,12 @@ pub struct GammaExposureStats {
     pub maximum: f64,
     pub minimum: f64,
     pub absolute_maximum: f64,
+    pub absolute_minimum: f64,
     pub weighted_average_absolute_price: f64,
     pub weighted_average_positive_price: f64,
     pub weighted_average_negative_price: f64,
+    pub absolute_maximum_price: f64,
+    pub absolute_minimum_price: f64,
 }
 
 impl GammaExposureStats {
@@ -31,8 +34,11 @@ impl GammaExposureStats {
         let mut maximum: f64 = 0.0;
         let mut minimum: f64 = 0.0;
         let mut absolute_maximum: f64 = 0.0;
+        let mut absolute_minimum: f64 = 0.0;
         let mut weighted_positive_sum: f64 = 0.0;
         let mut weighted_negative_sum: f64 = 0.0;
+        let mut absolute_maximum_price: f64 = 0.0;
+        let mut absolute_minimum_price: f64 = 0.0;
 
         for (strike, exposure) in strike_to_gamma_exposure {
             let strike: f64 = strike.parse()?;
@@ -47,7 +53,16 @@ impl GammaExposureStats {
             }
             maximum = maximum.max(*exposure);
             minimum = minimum.min(*exposure);
-            absolute_maximum = absolute_maximum.max(exposure.abs());
+            
+            if exposure.abs() >= absolute_maximum {
+                absolute_maximum = exposure.abs();
+                absolute_maximum_price = strike;
+            }
+
+            if exposure.abs() <= absolute_minimum {
+                absolute_minimum = exposure.abs();
+                absolute_minimum_price = strike;                
+            }
         }
 
         positive_count = positive_count.max(1);
@@ -79,9 +94,12 @@ impl GammaExposureStats {
             maximum,
             minimum,
             absolute_maximum,
+            absolute_minimum,
             weighted_average_absolute_price,
             weighted_average_positive_price,
             weighted_average_negative_price,
+            absolute_maximum_price,
+            absolute_minimum_price,
         })
     }
 }
@@ -173,7 +191,7 @@ pub async fn gamma_exposure_aggregate(
         let current_time = 0.0;
         let strike = option.strike;
 
-        let mut price = 0.0;
+        let mut price = price_offset;
         while price <= max_price {
             let price_string = price.to_string();
             let gamma = gamma(sigma, expiration_time, current_time, price, strike);
