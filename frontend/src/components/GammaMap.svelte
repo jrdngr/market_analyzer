@@ -12,7 +12,7 @@
     let minPrice = 0;
     let maxPrice = 0;
 
-    let brightness = 1;
+    let brightness = 20;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -29,9 +29,9 @@
         const ohlc = await getOhlc(symbol, "5min");
         data.ohlc = ohlc;
 
-        const priceOffset = data.quote.last * .10;
-        minPrice = data.quote.week_52_low - priceOffset;
-        maxPrice = data.quote.week_52_high + priceOffset;
+        const priceOffset = data.quote.last * .01;
+        minPrice = data.quote.low - priceOffset;
+        maxPrice = data.quote.high + priceOffset;
         
         setData(data);
     });

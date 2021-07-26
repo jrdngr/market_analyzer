@@ -17,8 +17,12 @@
 
         d3.select(el).style("background", "black");
 
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 1);
+        const endDate = new Date();
+
         const x = d3.scaleTime()
-            .domain([new Date("2021-07-23T09:00"), new Date("2021-07-23T21:00")])
+            .domain([startDate, endDate])
             .range([margin.left, width - margin.right]);
 
         const xAxis = g => g
