@@ -52,6 +52,8 @@
             }
         });
 
+        reducedData.sort((d1, d2) => d1.strike - d2.strike);
+
         minStrike = Math.min(...reducedData.map(d => d.strike));
         maxStrike = Math.max(...reducedData.map(d => d.strike));
     }
