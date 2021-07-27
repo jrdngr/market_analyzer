@@ -105,6 +105,6 @@
     }
 
     .charts {
-        width: 80%;
+        width: 60%;
     }
 </style>
