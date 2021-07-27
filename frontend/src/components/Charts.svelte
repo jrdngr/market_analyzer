@@ -6,6 +6,7 @@
 
     let symbol = localStorage.getItem(LAST_SEARCHED_KEY) || "SPY";
     let aggregate = false;
+    let fresh = false;
 
     let charts = [];
 
@@ -18,7 +19,15 @@
     }
 
     function addChart(type) {
-        charts = [ ...charts, { type, symbol, aggregate } ];
+        const chart = {
+            type,
+            symbol,
+            options: {
+                aggregate,
+                fresh,
+            }
+        };
+        charts = [ ...charts, chart ];
         storeLastSearched();
     }
 
@@ -30,6 +39,7 @@
 Symbol:
 <input bind:value={symbol}>
 <input type=checkbox bind:checked={aggregate}> Aggregate
+<input type=checkbox bind:checked={fresh}> Fresh
 <button on:click={addGammaMap}>
     Map
 </button>
@@ -39,9 +49,9 @@ Symbol:
 
 {#each charts as chart}
     {#if chart.type === "exposure"}
-        <GammaExposure bind:symbol={chart.symbol} bind:aggregate={chart.aggregate}/>
+        <GammaExposure bind:symbol={chart.symbol} bind:options={chart.options}/>
     {:else if chart.type === "map"}
-        <GammaMap bind:symbol={chart.symbol} bind:aggregate={chart.aggregate}/>
+        <GammaMap bind:symbol={chart.symbol} bind:options={chart.options}/>
     {/if}
 {/each}
 

@@ -6,6 +6,7 @@ pub mod utils;
 use data_apis::tradier;
 use std::{convert::Infallible};
 use warp::{http::StatusCode, Filter, Rejection};
+use serde::Deserialize;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -18,15 +19,8 @@ async fn main() -> anyhow::Result<()> {
 
     let gamma_exposure = warp::get()
         .and(warp::path!("gamma" / String))
+        .and(warp::query::<GammaExposureOptions>())
         .and_then(handle_gamma_exposure);
-
-    let gamma_exposure_fresh = warp::get()
-        .and(warp::path!("gamma" / String / "fresh"))
-        .and_then(handle_gamma_exposure_fresh);
-
-    let gamma_exposure_aggregate = warp::get()
-        .and(warp::path!("gamma" / String / "aggregate"))
-        .and_then(handle_gamma_exposure_aggregate);
 
     let quote = warp::get()
         .and(warp::path!("quote" / String))
@@ -41,8 +35,6 @@ async fn main() -> anyhow::Result<()> {
         .allow_methods(vec!["GET", "POST", "PUT"]);
 
     let routes = gamma_exposure
-        .or(gamma_exposure_fresh)
-        .or(gamma_exposure_aggregate)
         .or(quote)
         .or(ohlc);
 
@@ -53,28 +45,21 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn handle_gamma_exposure(symbol: String) -> Result<impl warp::Reply, Rejection> {
-    match analysis::gamma_exposure::gamma_exposure_stats(&symbol, false).await {
-        Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
-        Err(err) => {
-            log::error!("{:?}", err);
-            Err(warp::reject::not_found())
-        }
-    }
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct GammaExposureOptions {
+    aggregate: bool,
+    fresh: bool,
 }
 
-async fn handle_gamma_exposure_fresh(symbol: String) -> Result<impl warp::Reply, Rejection> {
-    match analysis::gamma_exposure::gamma_exposure_stats(&symbol, true).await {
-        Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
-        Err(err) => {
-            log::error!("{:?}", err);
-            Err(warp::reject::not_found())
-        }
-    }
-}
+async fn handle_gamma_exposure(symbol: String, options: GammaExposureOptions) -> Result<impl warp::Reply, Rejection> {
+    let gamma_exposure = if options.aggregate {
+        analysis::gamma_exposure::gamma_exposure_aggregate(&symbol, options.fresh).await
+    } else {
+        analysis::gamma_exposure::gamma_exposure_stats(&symbol, options.fresh).await
+    };
 
-async fn handle_gamma_exposure_aggregate(symbol: String) -> Result<impl warp::Reply, Rejection> {
-    match analysis::gamma_exposure::gamma_exposure_aggregate(&symbol, false).await {
+    match gamma_exposure {
         Ok(ge) => Ok(serde_json::to_string(&ge).map_err(|_| warp::reject::not_found())?),
         Err(err) => {
             log::error!("{:?}", err);
