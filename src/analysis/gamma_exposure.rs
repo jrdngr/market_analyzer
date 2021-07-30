@@ -1,6 +1,6 @@
 use std::{
     collections::BTreeMap,
-    convert::TryFrom,
+    sync::{Arc, Mutex},
 };
 
 use chrono::{Date, Local, TimeZone};
@@ -48,12 +48,12 @@ impl GammaExposureStats {
                 positive_count += 1;
             } else {
                 negative_sum += exposure;
-                weighted_negative_sum += strike * *exposure;
+                weighted_negative_sum += strike * exposure;
                 negative_count += 1;
             }
             maximum = maximum.max(*exposure);
             minimum = minimum.min(*exposure);
-            
+
             if exposure.abs() >= absolute_maximum {
                 absolute_maximum = exposure.abs();
                 absolute_maximum_price = strike;
@@ -61,7 +61,7 @@ impl GammaExposureStats {
 
             if exposure.abs() <= absolute_minimum {
                 absolute_minimum = exposure.abs();
-                absolute_minimum_price = strike;                
+                absolute_minimum_price = strike;
             }
         }
 
@@ -73,11 +73,10 @@ impl GammaExposureStats {
         let average_absolute_exposure =
             (positive_sum.abs() + negative_sum.abs()) / (positive_count + negative_count) as f64;
 
-        let weighted_average_absolute_price =
-            f64::try_from(weighted_positive_sum.abs() + weighted_negative_sum.abs())?
-                / (positive_sum.abs() + negative_sum.abs());
-        let weighted_average_positive_price = f64::try_from(weighted_positive_sum)? / positive_sum;
-        let weighted_average_negative_price = f64::try_from(weighted_negative_sum)? / negative_sum;
+        let weighted_average_absolute_price = weighted_positive_sum.abs()
+            + weighted_negative_sum.abs() / (positive_sum.abs() + negative_sum.abs());
+        let weighted_average_positive_price = weighted_positive_sum / positive_sum;
+        let weighted_average_negative_price = weighted_negative_sum / negative_sum;
 
         let mut prices: Vec<GammaExposure> = strike_to_gamma_exposure
             .iter()
@@ -162,10 +161,13 @@ pub async fn gamma_exposure_aggregate(
     symbol: &str,
     force_download: bool,
 ) -> anyhow::Result<GammaExposureStats> {
+    use rayon::prelude::*;
+
     let options = tradier::get_option_chain(&symbol.to_uppercase(), force_download).await?;
 
     let now = Local::now().date();
-    let mut strike_to_gamma_exposure_aggregate: BTreeMap<String, f64> = BTreeMap::new();
+    let strike_to_gamma_exposure_aggregate: Arc<Mutex<Option<BTreeMap<String, f64>>>> =
+        Arc::new(Mutex::new(Some(BTreeMap::new())));
 
     let min_strike = options
         .iter()
@@ -182,21 +184,36 @@ pub async fn gamma_exposure_aggregate(
     let max_price = max_strike + min_strike;
     let price_offset = 0.5;
 
-    for option in options {
-        let expiration_date = parse_date(&option.expiration_date)?;
-        let days_remaining = expiration_date.signed_duration_since(now).num_days();
+    let mut price = 0.0;
+    let prices = std::iter::from_fn(move || {
+        price += price_offset;
 
-        let sigma = option.greeks.map(|g| g.mid_iv).unwrap_or(0.0);
-        let expiration_time = days_remaining as f64 / 365.0;
-        let current_time = 0.0;
-        let strike = option.strike;
+        if price <= max_price {
+            Some(price)
+        } else {
+            None
+        }
+    });
 
-        let mut price = price_offset;
-        while price <= max_price {
+    prices.par_bridge().for_each(|price| {
+        for option in &options {
+            let expiration_date =
+                parse_date(&option.expiration_date).expect("Failed to parse date");
+            let days_remaining = expiration_date.signed_duration_since(now).num_days();
+
+            let sigma = if let Some(greeks) = &option.greeks {
+                greeks.mid_iv
+            } else {
+                0.0
+            };
+            let expiration_time = days_remaining as f64 / 365.0;
+            let current_time = 0.0;
+            let strike = option.strike;
+
             let price_string = price.to_string();
             let gamma = gamma(sigma, expiration_time, current_time, price, strike);
 
-            let mut exposure = if gamma > 1.0 || gamma < -1.0  || gamma.is_nan() {
+            let mut exposure = if !(-1.0..=1.0).contains(&gamma) || gamma.is_nan() {
                 0.0
             } else {
                 gamma * option.open_interest as f64
@@ -204,24 +221,27 @@ pub async fn gamma_exposure_aggregate(
             if option.option_type == "put" {
                 exposure *= -1.0;
             }
-            match strike_to_gamma_exposure_aggregate.get_mut(&price_string) {
-                Some(exp) => *exp += exposure,
-                None => {
-                    strike_to_gamma_exposure_aggregate.insert(price_string.clone(), exposure);
+
+            let mut result = strike_to_gamma_exposure_aggregate.lock().unwrap();
+            if let Some(map) = &mut *result {
+                match map.get_mut(&price_string) {
+                    Some(exp) => *exp += exposure,
+                    None => {
+                        map.insert(price_string.clone(), exposure);
+                    }
                 }
             }
-
-            price += price_offset;
         }
-    }
+    });
 
-    // dbg!(&strike_to_gamma_exposure_aggregate);
+    let mut map_lock = strike_to_gamma_exposure_aggregate.lock().unwrap();
+    let result = map_lock.take().unwrap();
 
-    Ok(GammaExposureStats::new(&strike_to_gamma_exposure_aggregate)?)
+    Ok(GammaExposureStats::new(&result)?)
 }
 
 fn parse_date(date: &str) -> anyhow::Result<Date<Local>> {
-    let mut split_date = date.split("-");
+    let mut split_date = date.split('-');
 
     let y: i32 = split_date
         .next()

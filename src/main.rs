@@ -4,9 +4,9 @@ pub mod math;
 pub mod utils;
 
 use data_apis::tradier;
-use std::{convert::Infallible};
-use warp::{http::StatusCode, Filter, Rejection};
 use serde::Deserialize;
+use std::convert::Infallible;
+use warp::{http::StatusCode, Filter, Rejection};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -34,9 +34,7 @@ async fn main() -> anyhow::Result<()> {
         .allow_any_origin()
         .allow_methods(vec!["GET", "POST", "PUT"]);
 
-    let routes = gamma_exposure
-        .or(quote)
-        .or(ohlc);
+    let routes = gamma_exposure.or(quote).or(ohlc);
 
     warp::serve(routes.recover(handle_rejection).with(cors))
         .run(([127, 0, 0, 1], 3030))
@@ -52,7 +50,10 @@ struct GammaExposureOptions {
     fresh: bool,
 }
 
-async fn handle_gamma_exposure(symbol: String, options: GammaExposureOptions) -> Result<impl warp::Reply, Rejection> {
+async fn handle_gamma_exposure(
+    symbol: String,
+    options: GammaExposureOptions,
+) -> Result<impl warp::Reply, Rejection> {
     let gamma_exposure = if options.aggregate {
         analysis::gamma_exposure::gamma_exposure_aggregate(&symbol, options.fresh).await
     } else {

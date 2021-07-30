@@ -123,6 +123,7 @@ pub struct OptionData {
     pub mark_percent_change: f64,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum ExchangeName {
