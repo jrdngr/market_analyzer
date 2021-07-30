@@ -79,7 +79,7 @@ pub struct TimeAndSales {
     pub low: f64,
     pub close: f64,
     pub volume: u64,
-    pub vwap: f64,
+    pub vwap: Option<f64>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
