@@ -29,6 +29,7 @@
         };
         charts = [ ...charts, chart ];
         storeLastSearched();
+        fresh = false;
     }
 
     function storeLastSearched() {
