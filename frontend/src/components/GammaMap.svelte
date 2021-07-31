@@ -33,11 +33,32 @@
         const priceOffset = data.quote.last * .01;
         minPrice = data.quote.low - priceOffset;
         maxPrice = data.quote.high + priceOffset;
-        
-        setData(data);
+
+        setInterval(async () => {
+            const quote = await getQuote(data.quote.symbol);
+            data.quote = quote
+            setData();
+        }, 30_000);
+
+        setInterval(async () => {
+            const ohlc = await getOhlc(symbol, "5min");
+            data.ohlc = ohlc;
+            setData();
+        }, 5 * 60_000);
+
+        setInterval(async () => {
+            let gexData = await getGammaExposure(symbol, options);
+            gexData.quote = await getQuote(data.quote.symbol);
+            gexData.ohlc = await getOhlc(symbol, "5min");
+            data = gexData;
+            
+            setData();
+        }, 60 * 60_000);
+
+        setData();
     });
 
-    function setData(data) {
+    function setData() {
         reducedData = Object.assign({}, data);
 
         reducedData.prices = reducedData.prices
@@ -51,33 +72,15 @@
     }
     
     function updateMinMaxPrice() {
-        setData(data);
+        setData();
     }
 
     function updateBrightness() {
-        setData(data);
+        setData();
     }
 
     function updateHighlightStrikes() {
-        setData(data);
-    }
-
-    function lowHighPrice() {
-        let low;
-        let high = 0;
-        for (const slice of data.ohlc) {
-            if (!low) {
-                low = slice.low;
-            }
-            if (slice.low < low) {
-                low = slice.low;
-            }
-            if (slice.high > high) {
-                high = slice.high
-            }
-        }
-
-        return [low, high]
+        setData();
     }
 </script>
 

@@ -7,7 +7,7 @@
 
 	let el = document.createElement("div");
     const componentId = randomId();
-    
+
 	beforeUpdate(() => {
         const margin = ({top: 20, right: 0, bottom: 70, left: 70})
         const width = 800;
@@ -43,6 +43,27 @@
 
         const svg = d3.create("svg")
             .attr("viewBox", [0, 0, width, height]);
+
+                
+        /*
+         * Draw axes
+         */
+         svg.append("g")
+            .call(xAxis)
+            .selectAll("text")
+            .data(data)
+            .attr("fill", "white")
+            .attr("font-size", "1em");
+        
+        svg.append("g")
+            .call(yAxis)
+            .selectAll("text")
+            .attr("fill", "white")
+            .attr("font-size", "1em");
+
+        const yPrice = d3.scaleLinear()
+            .domain([minPrice, maxPrice])
+            .range([height - margin.bottom, margin.top]);
 
         /* 
          * Draw background
@@ -96,26 +117,6 @@
                 .attr("fill", getColor);
         }
 
-        /*
-         * Draw axes
-         */
-        svg.append("g")
-            .call(xAxis)
-            .selectAll("text")
-            .data(data)
-            .attr("fill", "white")
-            .attr("font-size", "1em");
-        
-        svg.append("g")
-            .call(yAxis)
-            .selectAll("text")
-            .attr("fill", "white")
-            .attr("font-size", "1em");
-
-        const yPrice = d3.scaleLinear()
-            .domain([minPrice, maxPrice])
-            .range([height - margin.bottom, margin.top]);
-
         /* 
          * Draw current price
          */
@@ -152,7 +153,6 @@
             .attr("width", 1)
             .attr("height", d => Math.abs(y(d.high) - y(d.low)))
             .attr("fill", "steelblue");
-
 
         el.append(svg.node());
     });
