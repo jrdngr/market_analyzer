@@ -1,10 +1,12 @@
 <script>
 	import { beforeUpdate } from 'svelte';
 	import * as d3 from 'd3';
+    import { randomId } from '../../common/utils';
 	
     export let data;
 
 	let el = document.createElement("div");
+    const componentId = randomId();
     
 	beforeUpdate(() => {
         const margin = ({top: 20, right: 0, bottom: 70, left: 70})
@@ -47,7 +49,7 @@
          */
         const gradient = svg
             .append("linearGradient")
-            .attr("id", "exposure-gradient")
+            .attr("id", `exposure-gradient-${componentId}`)
             .attr("x1", "0%")
             .attr("x2", "0%")
             .attr("y1", "100%")
@@ -71,7 +73,7 @@
             .style("stop-color", getColor);
 
         svg.append("rect")
-            .attr("fill", "url(#exposure-gradient)")
+            .attr("fill", `url(#exposure-gradient-${componentId})`)
             .attr("x", x.range()[0])
             .attr("y", y.range()[1])
             .attr("width", x.range()[1] - x.range()[0])
@@ -161,11 +163,6 @@
         }).join('')
     }
 
-    function scaleAlpha(alpha) {
-        const brightness = data.brightness / 100;
-        return Math.min(alpha + brightness, 1.0);
-    }
-
     function getAlpha(point) {
         let a;
 
@@ -176,8 +173,8 @@
         }
 
         const brightness = data.brightness / 100;
-        a = scaleAlpha(a);
         a = Math.min(a + brightness, 1.0);
+        a = Math.max(a, 0.0);
         a = Math.floor(a * 255);
 
         return a;
