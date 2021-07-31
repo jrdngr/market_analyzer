@@ -74,6 +74,7 @@
 </script>
 
 <main>
+    <h3>{symbol}</h3>
     <div class="controls">
         Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:change={updateStrikes}>
         Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:change={updateStrikes}>
@@ -98,9 +99,5 @@
 <style>
     .controls input {
         width: 150px;
-    }
-
-    .charts {
-        width: 60%;
     }
 </style>

@@ -82,6 +82,7 @@
 </script>
 
 <main>
+    <h3>{symbol}</h3>
     <div class="controls">
         Min Price: <input type=number bind:value={minPrice} min=0 step=5 on:change={updateMinMaxPrice}>
         Max Price: <input type=number bind:value={maxPrice} min=0 step=5 on:change={updateMinMaxPrice}>
@@ -106,11 +107,18 @@
 </main>
 
 <style>
-    .controls input[type=number] {
-        width: 150px;
+    main {
+        background-color: lightgrey;
+        border-radius: 10px;
+        padding: 5px;
+        width: 50%;
     }
 
-    .charts {
-        width: 60%;
+    h3 {
+        font-weight: bold;
+    }
+
+    .controls input[type=number] {
+        width: 150px;
     }
 </style>

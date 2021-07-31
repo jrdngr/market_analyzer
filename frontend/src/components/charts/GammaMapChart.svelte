@@ -80,10 +80,11 @@
             .attr("height", y.range()[0] - y.range()[1]);
 
 
+        /* 
+         * Draw lines with the gradient stop color at each strike price
+         */
         if (data.highlightStrikes) {
-            /* 
-            * Highlight strikes in white
-            */
+
             svg.append("g")
                 .selectAll("rect")
                 .data(prices)
@@ -92,7 +93,7 @@
                 .attr("y", d => y(d.strike) - 0.5)
                 .attr("height", 1)
                 .attr("width", width)
-                .attr("fill", d => rgbaToHex(255, 255, 255, getAlpha(d)));
+                .attr("fill", getColor);
         }
 
         /*
