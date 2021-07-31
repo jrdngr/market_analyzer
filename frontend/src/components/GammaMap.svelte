@@ -15,7 +15,7 @@
     let minPrice = 0;
     let maxPrice = 0;
     let brightness = 0;
-    let highlightStrikes = false;
+    let highlightStrikes = true;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -87,8 +87,8 @@
 <main>
     <h3>{symbol}</h3>
     <div class="controls">
-        Min Price: <input type=number bind:value={minPrice} min=0 step=5 on:change={updateMinMaxPrice}>
-        Max Price: <input type=number bind:value={maxPrice} min=0 step=5 on:change={updateMinMaxPrice}>
+        Min Price: <input type=number bind:value={minPrice} min=0 step=1 on:change={updateMinMaxPrice}>
+        Max Price: <input type=number bind:value={maxPrice} min=0 step=1 on:change={updateMinMaxPrice}>
         Brightness: <input 
             type=number 
             bind:value={brightness} 
@@ -114,7 +114,7 @@
         background-color: lightgrey;
         border-radius: 10px;
         padding: 5px;
-        width: 50%;
+        /* width: 50%; */
     }
 
     h3 {

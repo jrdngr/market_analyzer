@@ -34,7 +34,8 @@
 
         const y = d3.scaleLinear()
             .domain([minPrice, maxPrice])
-            .rangeRound([height - margin.bottom, margin.top]);
+            .rangeRound([height - margin.bottom, margin.top])
+            .clamp(true);
 
         const yAxis = g => g
             .attr("transform", `translate(${margin.left},0)`)
@@ -139,7 +140,7 @@
             .data(data.ohlc)
             .join("rect")
             .attr("x", d => x(new Date(d.time)))
-            .attr("y", d => y(Math.min(d.open, d.close)))
+            .attr("y", d => y(Math.max(d.open, d.close)) - 0.5)
             .attr("width", 3)
             .attr("height", d => Math.abs(y(d.open) - y(d.close)))
             .attr("fill", "steelblue");
@@ -148,8 +149,8 @@
             .selectAll("rect")
             .data(data.ohlc)
             .join("rect")
-            .attr("x", d => x(new Date(d.time)))
-            .attr("y", d => y(d.low))
+            .attr("x", d => x(new Date(d.time)) + 1)
+            .attr("y", d => y(d.high) - 0.5)
             .attr("width", 1)
             .attr("height", d => Math.abs(y(d.high) - y(d.low)))
             .attr("fill", "steelblue");
