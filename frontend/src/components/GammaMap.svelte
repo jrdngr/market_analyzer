@@ -12,6 +12,7 @@
     let data = null;
     let reducedData = null;
 
+    let chartWidth = 50;
     let minPrice = 0;
     let maxPrice = 0;
     let brightness = 0;
@@ -26,6 +27,8 @@
     endDate.setHours(12);
     endDate.setMinutes(0);
     endDate.setMilliseconds(0);
+
+    $: chartWidthString = `width: ${chartWidth}%`;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -87,7 +90,7 @@
     }
 </script>
 
-<main>
+<main style={chartWidthString}>
     <h3>{symbol}</h3>
     <div class="controls">
         Min Price: <input type=number bind:value={minPrice} min=0 step=1 on:change={setData}>
@@ -103,6 +106,7 @@
         <input type=checkbox bind:checked={highlightStrikes} on:change={setData}> Highlight Strikes
     </div>
     <div class="controls">
+        Chart width: <input type=number bind:value={chartWidth} min=10 max=100 step=1>
         Start date: <input type=datetime-local bind:value={startDate} on:change={setData}>
         End date: <input type=datetime-local bind:value={endDate} on:change={setData}>
     </div>
@@ -120,8 +124,8 @@
     main {
         background-color: lightgrey;
         border-radius: 10px;
+        margin: 20px;
         padding: 5px;
-        /* width: 50%; */
     }
 
     h3 {

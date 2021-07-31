@@ -48,6 +48,7 @@ Symbol:
     Exposure
 </button>
 
+<div class="charts">
 {#each charts as chart}
     {#if chart.type === "exposure"}
         <GammaExposure bind:symbol={chart.symbol} bind:options={chart.options}/>
@@ -56,5 +57,10 @@ Symbol:
     {/if}
 {/each}
 
+</div>
+
 <style>
+    .charts {
+        display: flex;
+    }
 </style>
