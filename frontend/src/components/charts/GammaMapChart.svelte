@@ -12,6 +12,7 @@
         const height = 500;
 
         const [minPrice, maxPrice] = d3.extent(data.prices, d => d.strike);
+        const prices = data.prices.filter(p => p.strike >= minPrice && p.strike <= maxPrice);
 
         el.textContent = "";
 
@@ -44,22 +45,61 @@
         /* 
          * Draw background
          */
+        const gradient = svg
+            .append("linearGradient")
+            .attr("id", "exposure-gradient")
+            .attr("x1", "0%")
+            .attr("x2", "0%")
+            .attr("y1", "100%")
+            .attr("y2", "0%");
+        
+        const gradientOffset = (point) => {
+            const strike = point.strike;
+            
+            const position = y(strike) - 0.5;
+            const [min, max] = y.range();
+            
+            const strikeRatio = (position - min) / (max - min);
+            return strikeRatio;
+        };
 
-        svg.append("g")
-            .selectAll("rect")
-            .data(data.prices)
-            .join("rect")
-            .attr("x", margin.left)
-            .attr("y", d => y(d.strike) - 0.5)
-            .attr("height", 1)
-            .attr("width", width)
-            .attr("fill", getColor);
+        gradient
+            .selectAll("stop")
+            .data(prices)
+            .join("stop")
+            .attr("offset", gradientOffset)
+            .style("stop-color", getColor);
 
+        svg.append("rect")
+            .attr("fill", "url(#exposure-gradient)")
+            .attr("x", x.range()[0])
+            .attr("y", y.range()[1])
+            .attr("width", x.range()[1] - x.range()[0])
+            .attr("height", y.range()[0] - y.range()[1]);
+
+
+        if (data.highlightStrikes) {
+            /* 
+            * Highlight strikes in white
+            */
+            svg.append("g")
+                .selectAll("rect")
+                .data(prices)
+                .join("rect")
+                .attr("x", margin.left)
+                .attr("y", d => y(d.strike) - 0.5)
+                .attr("height", 1)
+                .attr("width", width)
+                .attr("fill", d => rgbaToHex(255, 255, 255, getAlpha(d)));
+        }
+
+        /*
+         * Draw axes
+         */
         svg.append("g")
             .call(xAxis)
             .selectAll("text")
             .data(data)
-            .attr("transform", "translate(12,25) rotate(90)")
             .attr("fill", "white")
             .attr("font-size", "1em");
         
@@ -126,22 +166,34 @@
         return Math.min(alpha + brightness, 1.0);
     }
 
+    function getAlpha(point) {
+        let a;
+
+        if (point.gamma_exposure > 0) {
+            a = point.gamma_exposure / data.maximum;
+        } else {
+            a = Math.abs(point.gamma_exposure / data.minimum);
+        }
+
+        const brightness = data.brightness / 100;
+        a = scaleAlpha(a);
+        a = Math.min(a + brightness, 1.0);
+        a = Math.floor(a * 255);
+
+        return a;
+    }
+
     function getColor(point) {
         let r = 0;
         let g = 0;
         let b = 0;
-        let a;
+        let a = getAlpha(point);
 
         if (point.gamma_exposure > 0) {
             r = 255;
-            a = point.gamma_exposure / data.maximum;
         } else {
             g = 255;
-            a = Math.abs(point.gamma_exposure / data.minimum);
         }
-
-        a = scaleAlpha(a);
-        a = Math.floor(a * 255);
 
         return rgbaToHex(r, g, b, a);
     }

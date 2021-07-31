@@ -14,8 +14,8 @@
 
     let minPrice = 0;
     let maxPrice = 0;
-
-    let brightness = 20;
+    let brightness = 0;
+    let highlightStrikes = false;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -47,6 +47,7 @@
         maxPrice = Math.max(...reducedData.prices.map(d => d.strike));
 
         reducedData.brightness = brightness;
+        reducedData.highlightStrikes = highlightStrikes;
     }
     
     function updateMinMaxPrice() {
@@ -54,6 +55,10 @@
     }
 
     function updateBrightness() {
+        setData(data);
+    }
+
+    function updateHighlightStrikes() {
         setData(data);
     }
 
@@ -88,6 +93,7 @@
             step=1
             on:change={updateBrightness}
         >
+        <input type=checkbox bind:checked={highlightStrikes} on:change={updateHighlightStrikes}> Highlight Strikes
     </div>
 
     <div class="charts">
@@ -100,7 +106,7 @@
 </main>
 
 <style>
-    .controls input {
+    .controls input[type=number] {
         width: 150px;
     }
 
