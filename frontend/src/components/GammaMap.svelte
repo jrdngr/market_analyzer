@@ -17,8 +17,21 @@
     let brightness = 0;
     let highlightStrikes = true;
 
+    let startDate = new Date();
+    startDate.setHours(5);
+    startDate.setMinutes(30);
+    startDate.setMilliseconds(0);
+    
+    let endDate = new Date();
+    endDate.setHours(12);
+    endDate.setMinutes(0);
+    endDate.setMilliseconds(0);
+
 	onMount(async () => {
         console.log("Fetching data");
+
+        startDate = startDate.toJSON().slice(0, -8);
+        endDate = endDate.toJSON().slice(0, -8);
 
         let gexData = await getGammaExposure(symbol, options);
 
@@ -69,35 +82,29 @@
 
         reducedData.brightness = brightness;
         reducedData.highlightStrikes = highlightStrikes;
-    }
-    
-    function updateMinMaxPrice() {
-        setData();
-    }
-
-    function updateBrightness() {
-        setData();
-    }
-
-    function updateHighlightStrikes() {
-        setData();
+        reducedData.startDate = startDate;
+        reducedData.endDate = endDate;
     }
 </script>
 
 <main>
     <h3>{symbol}</h3>
     <div class="controls">
-        Min Price: <input type=number bind:value={minPrice} min=0 step=1 on:change={updateMinMaxPrice}>
-        Max Price: <input type=number bind:value={maxPrice} min=0 step=1 on:change={updateMinMaxPrice}>
+        Min Price: <input type=number bind:value={minPrice} min=0 step=1 on:change={setData}>
+        Max Price: <input type=number bind:value={maxPrice} min=0 step=1 on:change={setData}>
         Brightness: <input 
             type=number 
             bind:value={brightness} 
             min=-100
             max=100 
             step=1
-            on:change={updateBrightness}
+            on:change={setData}
         >
-        <input type=checkbox bind:checked={highlightStrikes} on:change={updateHighlightStrikes}> Highlight Strikes
+        <input type=checkbox bind:checked={highlightStrikes} on:change={setData}> Highlight Strikes
+    </div>
+    <div class="controls">
+        Start date: <input type=datetime-local bind:value={startDate} on:change={setData}>
+        End date: <input type=datetime-local bind:value={endDate} on:change={setData}>
     </div>
 
     <div class="charts">

@@ -20,9 +20,8 @@
 
         d3.select(el).style("background", "black");
 
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 1);
-        const endDate = new Date();
+        const startDate = new Date(data.startDate);
+        const endDate = new Date(data.endDate);
 
         const x = d3.scaleTime()
             .domain([startDate, endDate])
