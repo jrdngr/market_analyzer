@@ -63,23 +63,29 @@ Symbol:
 
 <div class="charts">
 {#each charts as chart}
-    {#if chart.type === "exposure"}
-        <GammaExposure bind:symbol={chart.symbol} bind:options={chart.options}/>
-    {:else if chart.type === "map"}
-        <GammaMap bind:symbol={chart.symbol} bind:options={chart.options}/>
-    {/if}
-    <button on:click={deleteChart(chart.id)}>Delete</button>
+    <div class="chart">
+        {#if chart.type === "exposure"}
+            <GammaExposure bind:symbol={chart.symbol} bind:options={chart.options}/>
+        {:else if chart.type === "map"}
+            <GammaMap bind:symbol={chart.symbol} bind:options={chart.options}/>
+        {/if}
+        <button on:click={deleteChart(chart.id)}>Delete</button>
+    </div>
 {/each}
-
 </div>
 
 <style>
     .charts {
         display: flex;
-        flex-flow: column;
     }
 
-    .charts button {
+    .chart {
+        display: flex;
+        flex-flow: column;
+        width: 100%;
+    }
+
+    .chart button {
         width: 100px;
     }
 </style>

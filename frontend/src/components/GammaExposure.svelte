@@ -14,6 +14,9 @@
     let data = null;
     let reducedData = null;
     let percentileFilter = 0.0;
+    let chartWidth = 50;
+
+    $: chartWidthString = `width: ${chartWidth}%`;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -86,6 +89,7 @@
             step=0.01
             on:change={updatePercentileFilter}
         >
+        Chart width: <input type=number bind:value={chartWidth} min=10 max=100 step=1>
     </div>
 
     <div class="charts">

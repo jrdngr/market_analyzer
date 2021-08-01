@@ -90,7 +90,7 @@
     }
 </script>
 
-<main style={chartWidthString}>
+<main>
     <h3>{symbol}</h3>
     <div class="controls">
         Min Price: <input type=number bind:value={minPrice} min=0 step=1 on:change={setData}>
