@@ -34,11 +34,11 @@ impl GammaExposureStats {
         let mut maximum: f64 = 0.0;
         let mut minimum: f64 = 0.0;
         let mut absolute_maximum: f64 = 0.0;
-        let mut absolute_minimum: f64 = 0.0;
+        let mut absolute_minimum: f64 = f64::MAX;
         let mut weighted_positive_sum: f64 = 0.0;
         let mut weighted_negative_sum: f64 = 0.0;
         let mut absolute_maximum_price: f64 = 0.0;
-        let mut absolute_minimum_price: f64 = 0.0;
+        let mut absolute_minimum_price: f64 = f64::MAX;
 
         for (strike, exposure) in strike_to_gamma_exposure {
             let strike: f64 = strike.parse()?;
@@ -61,7 +61,7 @@ impl GammaExposureStats {
 
             if exposure.abs() <= absolute_minimum {
                 absolute_minimum = exposure.abs();
-                absolute_minimum_price = strike;                
+                absolute_minimum_price = strike;
             }
         }
 
