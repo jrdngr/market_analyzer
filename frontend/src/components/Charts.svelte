@@ -9,6 +9,7 @@
     let fresh = false;
 
     let charts = [];
+    let chartId = 0;
 
     function addExposureChart() {
         addChart("exposure");
@@ -19,7 +20,10 @@
     }
 
     function addChart(type) {
+        chartId += 1;
+    
         const chart = {
+            id: chartId,
             type,
             symbol,
             options: {
@@ -34,6 +38,15 @@
 
     function storeLastSearched() {
         localStorage.setItem(LAST_SEARCHED_KEY, symbol);
+    }
+    
+    function deleteChart(id) {
+        for (let i = 0; i < charts.length; i++) {
+            if (charts[i].id == id) {
+                charts.splice(i, 1);
+            }
+        }
+        charts = [ ...charts ];
     }
 </script>
 
@@ -55,6 +68,7 @@ Symbol:
     {:else if chart.type === "map"}
         <GammaMap bind:symbol={chart.symbol} bind:options={chart.options}/>
     {/if}
+    <button on:click={deleteChart(chart.id)}>Delete</button>
 {/each}
 
 </div>
@@ -62,5 +76,10 @@ Symbol:
 <style>
     .charts {
         display: flex;
+        flex-flow: column;
+    }
+
+    .charts button {
+        width: 100px;
     }
 </style>
