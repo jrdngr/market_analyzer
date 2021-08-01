@@ -7,9 +7,9 @@ pub async fn get_time_and_sales(symbol: &str, interval: &str) -> anyhow::Result<
     let interval = TimeAndSalesInterval::from_str(interval)?;
 
     let lookback_days = match Local::now().weekday() {
-        chrono::Weekday::Sun => 3,
-        chrono::Weekday::Sat => 2,
-        _ => 1,
+        chrono::Weekday::Sun => 4,
+        chrono::Weekday::Sat => 3,
+        _ => 2,
     };
     let start = (Local::now() - Duration::days(lookback_days)).format("%Y-%m-%d %H:%M").to_string();
     

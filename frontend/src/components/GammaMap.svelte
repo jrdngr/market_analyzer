@@ -106,9 +106,9 @@
         <input type=checkbox bind:checked={highlightStrikes} on:change={setData}> Highlight Strikes
     </div>
     <div class="controls">
-        Chart width: <input type=number bind:value={chartWidth} min=10 max=100 step=1>
         Start date: <input type=datetime-local bind:value={startDate} on:change={setData}>
         End date: <input type=datetime-local bind:value={endDate} on:change={setData}>
+        Chart width: <input type=number bind:value={chartWidth} min=10 max=100 step=1>
     </div>
 
     <div class="charts">
