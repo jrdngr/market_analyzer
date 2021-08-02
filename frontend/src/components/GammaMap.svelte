@@ -17,6 +17,7 @@
     let maxPrice = 0;
     let brightness = 0;
     let highlightStrikes = true;
+    let flipColors = false;
 
     let startDate = new Date();
     startDate.setHours(5);
@@ -80,11 +81,12 @@
         reducedData.prices = reducedData.prices
             .filter(d => d.strike >= minPrice && d.strike <= maxPrice);
             
-        minPrice = Math.min(...reducedData.prices.map(d => d.strike));
-        maxPrice = Math.max(...reducedData.prices.map(d => d.strike));
+        minPrice = Math.floor(Math.min(...reducedData.prices.map(d => d.strike)));
+        maxPrice = Math.floor(Math.max(...reducedData.prices.map(d => d.strike)));
 
         reducedData.brightness = brightness;
         reducedData.highlightStrikes = highlightStrikes;
+        reducedData.flipColors = flipColors;
         reducedData.startDate = startDate;
         reducedData.endDate = endDate;
     }
@@ -103,13 +105,15 @@
             step=1
             on:change={setData}
         >
-        <input type=checkbox bind:checked={highlightStrikes} on:change={setData}> Highlight Strikes
     </div>
     <div class="controls">
         Start date: <input type=datetime-local bind:value={startDate} on:change={setData}>
         End date: <input type=datetime-local bind:value={endDate} on:change={setData}>
         Chart width: <input type=number bind:value={chartWidth} min=10 max=100 step=1>
     </div>
+    <div class="controls">
+        <input type=checkbox bind:checked={highlightStrikes} on:change={setData}> Highlight Strikes
+        <input type=checkbox bind:checked={flipColors} on:change={setData}> Flip colors
 
     <div class="charts">
         {#if reducedData}

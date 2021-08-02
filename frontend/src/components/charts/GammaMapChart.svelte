@@ -193,6 +193,12 @@
             g = 255;
         }
 
+        if (data.flipColors) {
+            let temp = r;
+            r = g;
+            g = temp;
+        }
+
         return rgbaToHex(r, g, b, a);
     }
 </script>
