@@ -142,7 +142,7 @@
             .attr("y", d => y(Math.max(d.open, d.close)) - 0.5)
             .attr("width", 3)
             .attr("height", d => Math.abs(y(d.open) - y(d.close)))
-            .attr("fill", "steelblue");
+            .attr("fill", "white");
 
         svg.append("g")
             .selectAll("rect")
@@ -152,7 +152,7 @@
             .attr("y", d => y(d.high) - 0.5)
             .attr("width", 1)
             .attr("height", d => Math.abs(y(d.high) - y(d.low)))
-            .attr("fill", "steelblue");
+            .attr("fill", "white");
 
         el.append(svg.node());
     });
