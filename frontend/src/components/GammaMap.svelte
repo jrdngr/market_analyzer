@@ -12,7 +12,8 @@
     let data = null;
     let reducedData = null;
 
-    let chartWidth = 50;
+    let showControls = true;
+
     let minPrice = 0;
     let maxPrice = 0;
     let brightness = 0;
@@ -28,8 +29,6 @@
     endDate.setHours(12);
     endDate.setMinutes(0);
     endDate.setMilliseconds(0);
-
-    $: chartWidthString = `width: ${chartWidth}%`;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -90,10 +89,18 @@
         reducedData.startDate = startDate;
         reducedData.endDate = endDate;
     }
+
+    function toggleControls() {
+        showControls = !showControls;
+    }
 </script>
 
 <main>
-    <h3>{symbol}</h3>
+    <div class="header">
+        <h3>{symbol}</h3>
+        <button on:click={toggleControls}>{showControls ? "Hide Controls" : "Show Controls"}</button>
+    </div>
+    {#if showControls}
     <div class="controls">
         Min Price: <input type=number bind:value={minPrice} min=0 step=1 on:change={setData}>
         Max Price: <input type=number bind:value={maxPrice} min=0 step=1 on:change={setData}>
@@ -109,12 +116,12 @@
     <div class="controls">
         Start date: <input type=datetime-local bind:value={startDate} on:change={setData}>
         End date: <input type=datetime-local bind:value={endDate} on:change={setData}>
-        Chart width: <input type=number bind:value={chartWidth} min=10 max=100 step=1>
     </div>
     <div class="controls">
         <input type=checkbox bind:checked={highlightStrikes} on:change={setData}> Highlight Strikes
         <input type=checkbox bind:checked={flipColors} on:change={setData}> Flip colors
-
+    </div>
+    {/if}
     <div class="charts">
         {#if reducedData}
         <div>
@@ -134,6 +141,16 @@
 
     h3 {
         font-weight: bold;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .header button {
+        height: 30px;
     }
 
     .controls input[type=number] {

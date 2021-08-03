@@ -9,14 +9,13 @@
         fresh: false,
     };
 
+    let showControls = true;
+
     let minStrike = 0;
     let maxStrike = 0;
     let data = null;
     let reducedData = null;
     let percentileFilter = 0.0;
-    let chartWidth = 50;
-
-    $: chartWidthString = `width: ${chartWidth}%`;
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -74,10 +73,18 @@
         minStrike = price - offset;
         maxStrike = price + offset;
     }
+
+    function toggleControls() {
+        showControls = !showControls;
+    }
 </script>
 
 <main>
-    <h3>{symbol}</h3>
+    <div class="header">
+        <h3>{symbol}</h3>
+        <button on:click={toggleControls}>{showControls ? "Hide Controls" : "Show Controls"}</button>
+    </div>
+    {#if showControls}
     <div class="controls">
         Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:change={updateStrikes}>
         Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:change={updateStrikes}>
@@ -89,8 +96,8 @@
             step=0.01
             on:change={updatePercentileFilter}
         >
-        Chart width: <input type=number bind:value={chartWidth} min=10 max=100 step=1>
     </div>
+    {/if}
 
     <div class="charts">
         {#if data}
@@ -101,6 +108,16 @@
 </main>
 
 <style>
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .header button {
+        height: 30px;
+    }
+
     .controls input {
         width: 150px;
     }
