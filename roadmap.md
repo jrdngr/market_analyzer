@@ -3,6 +3,7 @@
 * Figure out if gamma aggregate calculation is actually right
 * Option to plot calls and puts separately
 * Plot gamma changes day to day
+* Fix outlier coloring. NDX map is useless with a single massive strike
 
 
 # Long Term
