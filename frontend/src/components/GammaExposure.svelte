@@ -53,9 +53,6 @@
         });
 
         reducedData.sort((d1, d2) => d1.strike - d2.strike);
-
-        minStrike = Math.min(...reducedData.map(d => d.strike));
-        maxStrike = Math.max(...reducedData.map(d => d.strike));
     }
 
     function centerOnPrice(data) {
@@ -68,10 +65,9 @@
             return;
         }
 
-        const offset = 2 * Math.pow(10, offsetDigits);
-
-        minStrike = price - offset;
-        maxStrike = price + offset;
+        const priceOffset = Math.max(2, data.quote.last * 0.1);
+        minStrike = Math.floor(price - priceOffset);
+        maxStrike = Math.floor(price + priceOffset);
     }
 
     function toggleControls() {
@@ -86,8 +82,8 @@
     </div>
     {#if showControls}
     <div class="controls">
-        Min Strike: <input type=number bind:value={minStrike} min=0 step=5 on:change={updateStrikes}>
-        Max Strike: <input type=number bind:value={maxStrike} min=0 step=5 on:change={updateStrikes}>
+        Min Strike: <input type=number bind:value={minStrike} min=0 step=1 on:change={updateStrikes}>
+        Max Strike: <input type=number bind:value={maxStrike} min=0 step=1 on:change={updateStrikes}>
         Percentile Filter: <input 
             type=number 
             bind:value={percentileFilter} 

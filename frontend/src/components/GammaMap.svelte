@@ -46,9 +46,9 @@
 
         data = gexData;
 
-        const priceOffset = data.quote.last * .01;
-        minPrice = data.quote.low - priceOffset;
-        maxPrice = data.quote.high + priceOffset;
+        const priceOffset = Math.max(2, data.quote.last * 0.01);
+        minPrice = Math.floor(data.quote.low - priceOffset);
+        maxPrice = Math.floor(data.quote.high + priceOffset);
 
         setInterval(async () => {
             const quote = await getQuote(data.quote.symbol);
@@ -80,9 +80,6 @@
         reducedData.prices = reducedData.prices
             .filter(d => d.strike >= minPrice && d.strike <= maxPrice);
             
-        minPrice = Math.floor(Math.min(...reducedData.prices.map(d => d.strike)));
-        maxPrice = Math.floor(Math.max(...reducedData.prices.map(d => d.strike)));
-
         reducedData.brightness = brightness;
         reducedData.highlightStrikes = highlightStrikes;
         reducedData.flipColors = flipColors;
