@@ -3,6 +3,9 @@
 * Figure out if gamma aggregate calculation is actually right
 * Option to plot calls and puts separately
 * Plot gamma changes day to day
+* Add vanna
+* Permanent storage of options data
+* Dockerize and deploy remotely
 
 
 # Long Term
@@ -17,4 +20,3 @@
 * ~~Replace lines with gradient on gamma map~~
 * ~~Update data on gamma map~~
 * ~~Fix price bars on gamma map~~
-* 
