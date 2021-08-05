@@ -65,7 +65,7 @@
             return;
         }
 
-        const priceOffset = Math.max(2, data.quote.last * 0.1);
+        const priceOffset = Math.min(Math.max(2, data.quote.last * 0.1), 100);
         minStrike = Math.floor(price - priceOffset);
         maxStrike = Math.floor(price + priceOffset);
     }
