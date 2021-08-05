@@ -163,6 +163,7 @@ pub async fn gamma_exposure_aggregate(
     force_download: bool,
 ) -> anyhow::Result<GammaExposureStats> {
     let options = tradier::get_option_chain(&symbol.to_uppercase(), force_download).await?;
+    let quote = tradier::get_quote(&symbol.to_uppercase()).await?;
 
     let now = Local::now().date();
     let mut strike_to_gamma_exposure_aggregate: BTreeMap<String, f64> = BTreeMap::new();
@@ -179,7 +180,13 @@ pub async fn gamma_exposure_aggregate(
         .max_by(|s1, s2| s1.partial_cmp(s2).unwrap_or(std::cmp::Ordering::Less))
         .unwrap_or(0.0);
 
-    let max_price = max_strike + min_strike;
+    let (min_price, max_price) = match quote.last {
+        Some(last) => {
+            let offset = last * 0.1;
+            (last - offset, last + offset)
+        },
+        None => (min_strike, max_strike),
+    };
     let price_offset = 0.5;
 
     for option in options {
@@ -191,7 +198,7 @@ pub async fn gamma_exposure_aggregate(
         let current_time = 0.0;
         let strike = option.strike;
 
-        let mut price = price_offset;
+        let mut price = min_price.floor();
         while price <= max_price {
             let price_string = price.to_string();
             let gamma = gamma(sigma, expiration_time, current_time, price, strike);
