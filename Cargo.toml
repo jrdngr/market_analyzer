@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
+async-graphql = "2.9"
 chrono = "0.4"
 dotenv = "0.15"
 log = "0.4"
