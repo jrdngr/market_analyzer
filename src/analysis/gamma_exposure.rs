@@ -1,7 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    convert::TryFrom,
-};
+use std::{collections::BTreeMap, convert::TryFrom};
 
 use chrono::{Date, Local, TimeZone};
 use serde::{Deserialize, Serialize};
@@ -53,7 +50,7 @@ impl GammaExposureStats {
             }
             maximum = maximum.max(*exposure);
             minimum = minimum.min(*exposure);
-            
+
             if exposure.abs() >= absolute_maximum {
                 absolute_maximum = exposure.abs();
                 absolute_maximum_price = strike;
@@ -196,7 +193,7 @@ pub async fn gamma_exposure_aggregate(
             let price_string = price.to_string();
             let gamma = gamma(sigma, expiration_time, current_time, price, strike);
 
-            let mut exposure = if gamma > 1.0 || gamma < -1.0  || gamma.is_nan() {
+            let mut exposure = if gamma > 1.0 || gamma < -1.0 || gamma.is_nan() {
                 0.0
             } else {
                 gamma * option.open_interest as f64
@@ -217,7 +214,9 @@ pub async fn gamma_exposure_aggregate(
 
     // dbg!(&strike_to_gamma_exposure_aggregate);
 
-    Ok(GammaExposureStats::new(&strike_to_gamma_exposure_aggregate)?)
+    Ok(GammaExposureStats::new(
+        &strike_to_gamma_exposure_aggregate,
+    )?)
 }
 
 fn parse_date(date: &str) -> anyhow::Result<Date<Local>> {

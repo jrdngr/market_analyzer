@@ -11,8 +11,10 @@ pub async fn get_time_and_sales(symbol: &str, interval: &str) -> anyhow::Result<
         chrono::Weekday::Sat => 3,
         _ => 2,
     };
-    let start = (Local::now() - Duration::days(lookback_days)).format("%Y-%m-%d %H:%M").to_string();
-    
+    let start = (Local::now() - Duration::days(lookback_days))
+        .format("%Y-%m-%d %H:%M")
+        .to_string();
+
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
     let params = format!("symbol={}&interval={}&start={}", symbol, interval, start);
     let url = format!("{}/markets/timesales?{}", super::BASE_URL, params);
@@ -64,7 +66,7 @@ impl FromStr for TimeAndSalesInterval {
             "1min" => TimeAndSalesInterval::OneMinute,
             "5min" => TimeAndSalesInterval::FiveMinute,
             "15min" => TimeAndSalesInterval::FifteenMinutes,
-            _      => anyhow::bail!("Invalid interval: {}", s),
+            _ => anyhow::bail!("Invalid interval: {}", s),
         })
     }
 }
