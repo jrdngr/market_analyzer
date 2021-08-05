@@ -6,6 +6,7 @@
 * Add vanna
 * Permanent storage of options data
 * Dockerize and deploy remotely
+* Fix outlier coloring. NDX map is useless with a single massive strike
 
 
 # Long Term
