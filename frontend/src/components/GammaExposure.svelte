@@ -9,7 +9,7 @@
         fresh: false,
     };
 
-    let showControls = false;
+    let showControls = true;
 
     let minStrike = 0;
     let maxStrike = 0;

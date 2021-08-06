@@ -12,7 +12,7 @@
     let data = null;
     let reducedData = null;
 
-    let showControls = false;
+    let showControls = true;
 
     let minPrice = 0;
     let maxPrice = 0;
