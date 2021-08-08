@@ -3,27 +3,9 @@ use std::{
     convert::TryFrom,
 };
 
-use chrono::{Date, Local, TimeZone};
-use serde::{Deserialize, Serialize};
+use chrono::{Date, FixedOffset, Local, TimeZone};
 
-use crate::{data_apis::tradier, math::bs::gamma};
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GammaExposureStats {
-    pub prices: Vec<GammaExposure>,
-    pub average_absolute_exposure: f64,
-    pub average_positive_exposure: f64,
-    pub average_negative_exposure: f64,
-    pub maximum: f64,
-    pub minimum: f64,
-    pub absolute_maximum: f64,
-    pub absolute_minimum: f64,
-    pub weighted_average_absolute_price: f64,
-    pub weighted_average_positive_price: f64,
-    pub weighted_average_negative_price: f64,
-    pub absolute_maximum_price: f64,
-    pub absolute_minimum_price: f64,
-}
+use crate::{data_apis::tradier, math::bs::gamma, types::gex::{GammaExposure, GammaExposureStats}};
 
 impl GammaExposureStats {
     pub fn new(strike_to_gamma_exposure: &BTreeMap<String, f64>) -> anyhow::Result<Self> {
@@ -102,12 +84,6 @@ impl GammaExposureStats {
             absolute_minimum_price,
         })
     }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GammaExposure {
-    pub strike: String,
-    pub gamma_exposure: f64,
 }
 
 impl GammaExposure {
@@ -227,21 +203,22 @@ pub async fn gamma_exposure_aggregate(
     Ok(GammaExposureStats::new(&strike_to_gamma_exposure_aggregate)?)
 }
 
-fn parse_date(date: &str) -> anyhow::Result<Date<Local>> {
+fn parse_date(date: &str) -> anyhow::Result<Date<FixedOffset>> {
     let mut split_date = date.split("-");
 
-    let y: i32 = split_date
+    let y = split_date
         .next()
         .ok_or_else(|| anyhow::anyhow!("Invalid year"))?
         .parse()?;
-    let m: u32 = split_date
+    let m = split_date
         .next()
         .ok_or_else(|| anyhow::anyhow!("Invalid month"))?
         .parse()?;
-    let d: u32 = split_date
+    let d = split_date
         .next()
         .ok_or_else(|| anyhow::anyhow!("Invalid day"))?
         .parse()?;
 
-    Ok(Local.ymd(y, m, d))
+    let ny_offset = FixedOffset::east(5 * 3600);
+    Ok(ny_offset.ymd(y, m, d))
 }

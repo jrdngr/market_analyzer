@@ -1,3 +1,4 @@
+pub mod gex;
 pub mod ohlc;
 pub mod options;
 pub mod quote;
