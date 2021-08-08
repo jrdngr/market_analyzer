@@ -1,20 +1,21 @@
-use std::str::FromStr;
-
 use chrono::{Datelike, Duration, Local};
 use serde::{Deserialize, Serialize};
 
-use crate::types as types;
+use crate::graphql::{self as graphql, OhlcInterval};
 
-pub async fn get_time_and_sales(symbol: &str, interval: &str) -> anyhow::Result<Vec<TimeAndSales>> {
-    let interval = types::OhlcInterval::from_str(interval)?;
-
+pub async fn get_time_and_sales(
+    symbol: &str,
+    interval: OhlcInterval,
+) -> anyhow::Result<Vec<TimeAndSales>> {
     let lookback_days = match Local::now().weekday() {
         chrono::Weekday::Sun => 4,
         chrono::Weekday::Sat => 3,
         _ => 2,
     };
-    let start = (Local::now() - Duration::days(lookback_days)).format("%Y-%m-%d %H:%M").to_string();
-    
+    let start = (Local::now() - Duration::days(lookback_days))
+        .format("%Y-%m-%d %H:%M")
+        .to_string();
+
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
     let params = format!("symbol={}&interval={}&start={}", symbol, interval, start);
     let url = format!("{}/markets/timesales?{}", super::BASE_URL, params);
@@ -57,8 +58,8 @@ struct TimeAndSalesInner {
     data: Vec<TimeAndSales>,
 }
 
-impl From<(types::OhlcInterval, TimeAndSales)> for types::Ohlc {
-    fn from((interval, ts): (types::OhlcInterval, TimeAndSales)) -> Self {
+impl From<(graphql::OhlcInterval, TimeAndSales)> for graphql::Ohlc {
+    fn from((interval, ts): (graphql::OhlcInterval, TimeAndSales)) -> Self {
         Self {
             interval,
             time: ts.time,

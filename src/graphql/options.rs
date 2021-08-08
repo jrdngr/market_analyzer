@@ -1,8 +1,9 @@
 use std::str::FromStr;
 
+use async_graphql::{Enum, SimpleObject};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct OptionInfo {
     pub symbol: String,
     pub option_type: OptionType,
@@ -26,7 +27,7 @@ pub struct OptionInfo {
     pub smv_vol: Option<f64>,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Enum)]
 pub enum OptionType {
     Call,
     Put,

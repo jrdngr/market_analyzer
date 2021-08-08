@@ -125,6 +125,7 @@ pub struct OptionData {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
+#[allow(clippy::upper_case_acronyms)]
 pub enum ExchangeName {
     IND,
     ASE,

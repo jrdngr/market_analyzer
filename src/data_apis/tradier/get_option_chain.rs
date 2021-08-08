@@ -3,7 +3,7 @@ use std::{convert::TryFrom, path::Path, str::FromStr};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
-use crate::types as types;
+use crate::graphql;
 
 const DATA_PATH: &str = "data";
 
@@ -123,13 +123,13 @@ struct OptionChainResponseInner {
     option: Vec<OptionInfo>,
 }
 
-impl TryFrom<OptionInfo> for types::OptionInfo {
+impl TryFrom<OptionInfo> for graphql::OptionInfo {
     type Error = anyhow::Error;
 
     fn try_from(info: OptionInfo) -> Result<Self, Self::Error> {
         Ok(Self {
             symbol: info.root_symbol,
-            option_type: types::OptionType::from_str(&info.option_type)?,
+            option_type: graphql::OptionType::from_str(&info.option_type)?,
             strike: info.strike,
             expiration_date: info.expiration_date,
             open_interest: info.open_interest,

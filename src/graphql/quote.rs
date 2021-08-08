@@ -1,6 +1,7 @@
+use async_graphql::SimpleObject;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct Quote {
     pub symbol: String,
     pub last: Option<f64>,

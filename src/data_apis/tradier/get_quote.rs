@@ -1,5 +1,5 @@
+use crate::graphql;
 use serde::{Deserialize, Serialize};
-use crate::types as types;
 
 pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
@@ -63,7 +63,7 @@ struct QuoteResponseInner {
     quote: Quote,
 }
 
-impl From<Quote> for types::Quote {
+impl From<Quote> for graphql::Quote {
     fn from(quote: Quote) -> Self {
         Self {
             symbol: quote.symbol,

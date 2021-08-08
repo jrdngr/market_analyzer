@@ -1,12 +1,24 @@
+use async_graphql::{InputObject, SimpleObject};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Deserialize, InputObject)]
+#[serde(default)]
+pub struct GammaExposureOptions {
+    #[graphql(default)]
+    pub aggregate: bool,
+    #[graphql(default)]
+    pub fresh: bool,
+    pub min_strike: Option<f64>,
+    pub max_strike: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct GammaExposure {
     pub strike: String,
     pub gamma_exposure: f64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct GammaExposureStats {
     pub prices: Vec<GammaExposure>,
     pub average_absolute_exposure: f64,

@@ -1,8 +1,9 @@
 use std::str::FromStr;
 
+use async_graphql::{Enum, SimpleObject};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct Ohlc {
     pub interval: OhlcInterval,
     pub time: String,
@@ -15,11 +16,15 @@ pub struct Ohlc {
     pub vwap: Option<f64>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Enum)]
 pub enum OhlcInterval {
+    #[graphql(name = "tick")]
     Tick,
+    #[graphql(name = "1min")]
     OneMinute,
+    #[graphql(name = "5min")]
     FiveMinute,
+    #[graphql(name = "15min")]
     FifteenMinute,
 }
 
@@ -47,7 +52,7 @@ impl FromStr for OhlcInterval {
             "1min" => OhlcInterval::OneMinute,
             "5min" => OhlcInterval::FiveMinute,
             "15min" => OhlcInterval::FifteenMinute,
-            _      => anyhow::bail!("Invalid interval: {}", s),
+            _ => anyhow::bail!("Invalid interval: {}", s),
         })
     }
 }
