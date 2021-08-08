@@ -1,6 +1,7 @@
 pub mod analysis;
 pub mod data_apis;
 pub mod math;
+pub mod types;
 pub mod utils;
 
 use data_apis::tradier;

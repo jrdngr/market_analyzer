@@ -3,8 +3,10 @@ use std::str::FromStr;
 use chrono::{Datelike, Duration, Local};
 use serde::{Deserialize, Serialize};
 
+use crate::types as types;
+
 pub async fn get_time_and_sales(symbol: &str, interval: &str) -> anyhow::Result<Vec<TimeAndSales>> {
-    let interval = TimeAndSalesInterval::from_str(interval)?;
+    let interval = types::OhlcInterval::from_str(interval)?;
 
     let lookback_days = match Local::now().weekday() {
         chrono::Weekday::Sun => 4,
@@ -33,43 +35,6 @@ pub async fn get_time_and_sales(symbol: &str, interval: &str) -> anyhow::Result<
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum TimeAndSalesInterval {
-    Tick,
-    OneMinute,
-    FiveMinute,
-    FifteenMinutes,
-}
-
-impl std::fmt::Display for TimeAndSalesInterval {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use TimeAndSalesInterval::*;
-
-        let s = match self {
-            Tick => "tick",
-            OneMinute => "1min",
-            FiveMinute => "5min",
-            FifteenMinutes => "15min",
-        };
-
-        write!(f, "{}", s)
-    }
-}
-
-impl FromStr for TimeAndSalesInterval {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "tick" => TimeAndSalesInterval::Tick,
-            "1min" => TimeAndSalesInterval::OneMinute,
-            "5min" => TimeAndSalesInterval::FiveMinute,
-            "15min" => TimeAndSalesInterval::FifteenMinutes,
-            _      => anyhow::bail!("Invalid interval: {}", s),
-        })
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TimeAndSales {
     pub time: String,
     pub timestamp: u64,
@@ -90,4 +55,20 @@ struct TimeAndSalesResponse {
 #[derive(Clone, Debug, Deserialize)]
 struct TimeAndSalesInner {
     data: Vec<TimeAndSales>,
+}
+
+impl From<(types::OhlcInterval, TimeAndSales)> for types::Ohlc {
+    fn from((interval, ts): (types::OhlcInterval, TimeAndSales)) -> Self {
+        Self {
+            interval,
+            time: ts.time,
+            price: ts.price,
+            open: ts.open,
+            high: ts.high,
+            low: ts.low,
+            close: ts.close,
+            volume: ts.volume,
+            vwap: ts.vwap,
+        }
+    }
 }

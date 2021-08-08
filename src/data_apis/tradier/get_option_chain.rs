@@ -1,7 +1,9 @@
-use std::path::Path;
+use std::{convert::TryFrom, path::Path, str::FromStr};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+
+use crate::types as types;
 
 const DATA_PATH: &str = "data";
 
@@ -119,4 +121,33 @@ struct OptionChainResponse {
 #[derive(Clone, Debug, Deserialize)]
 struct OptionChainResponseInner {
     option: Vec<OptionInfo>,
+}
+
+impl TryFrom<OptionInfo> for types::OptionInfo {
+    type Error = anyhow::Error;
+
+    fn try_from(info: OptionInfo) -> Result<Self, Self::Error> {
+        Ok(Self {
+            symbol: info.root_symbol,
+            option_type: types::OptionType::from_str(&info.option_type)?,
+            strike: info.strike,
+            expiration_date: info.expiration_date,
+            open_interest: info.open_interest,
+            last: info.last,
+            change: info.change,
+            volume: info.volume,
+            open: info.open,
+            high: info.high,
+            low: info.low,
+            close: info.close,
+            delta: info.greeks.as_ref().map(|g| g.delta),
+            gamma: info.greeks.as_ref().map(|g| g.gamma),
+            theta: info.greeks.as_ref().map(|g| g.theta),
+            vega: info.greeks.as_ref().map(|g| g.vega),
+            rho: info.greeks.as_ref().map(|g| g.rho),
+            bid_iv: info.greeks.as_ref().map(|g| g.bid_iv),
+            ask_iv: info.greeks.as_ref().map(|g| g.ask_iv),
+            smv_vol: info.greeks.as_ref().map(|g| g.smv_vol),
+        })
+    }
 }
