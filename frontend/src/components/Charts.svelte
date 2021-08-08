@@ -12,7 +12,6 @@
             id: nextId,
         };
         rows = [...rows, row];
-        console.log(rows);
     }
 
     function deleteRow(id) {

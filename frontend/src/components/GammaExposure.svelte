@@ -47,8 +47,8 @@
             .filter(d => d.strike >= minStrike && d.strike <= maxStrike);
 
         reducedData.forEach(d => {
-            if (Math.abs(d.gamma_exposure) < data.absolute_maximum * percentileFilter) {
-                d.gamma_exposure = 0;
+            if (Math.abs(d.gammaExposure) < data.absoluteMaximum * percentileFilter) {
+                d.gammaExposure = 0;
             }
         });
 

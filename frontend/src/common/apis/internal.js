@@ -1,34 +1,60 @@
 const BASE_URL = `http://localhost:3030`;
 
 export async function getGammaExposure(symbol, options) {
-    let params = new URLSearchParams();
-    let hasParams = false;
-    if (options.aggregate) {
-        params.append("aggregate", true);
-        hasParams = true;
-    }
-    if (options.fresh) {
-        params.append("fresh", true);
-        hasParams = true;
-    }
-
-    let url = `${BASE_URL}/gamma/${symbol}`;
-    if (hasParams) {
-        url += `?${params.toString()}`;
-    }
-
-    const data = await (await fetch(url)).json();
-    return data;
+    return (await graphql_request(`{
+        gammaExposure(symbol: "${symbol}") {
+            prices {
+                strike,
+                gammaExposure,
+            }
+            maximum,
+            minimum,
+            absoluteMaximum,
+        }
+    }`)).gammaExposure;
 }
 
 export async function getQuote(symbol) {
-    const url = `${BASE_URL}/quote/${symbol}`;
-    const data = await (await fetch(url)).json();
-    return data;
+    return (await graphql_request(`{
+        quote(symbol: "${symbol}") {
+            symbol,
+            last,
+            change,
+            volume,
+            open,
+            high,
+            low,
+            close,
+        }
+    }`)).quote
 }
 
 export async function getOhlc(symbol, interval) {
-    const url = `${BASE_URL}/ohlc/${symbol}/${interval}`;
-    const data = await (await fetch(url)).json();
-    return data;
+    return (await graphql_request(`{
+        ohlc(symbol: "${symbol}", interval: "${interval}") {
+            time,
+            price,
+            open,
+            high,
+            low,
+            close,
+            volume,
+            vwap,
+        }
+    }`)).ohlc
+}
+
+async function graphql_request(query) {
+    const escapedQuery = query
+        .replace(/\n/g, "\\n")
+        .replace(/"/g, "\\\"");
+
+    const response = await fetch(BASE_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: `{ "query": "${escapedQuery}" }`,
+    });
+    return (await response.json()).data;
 }

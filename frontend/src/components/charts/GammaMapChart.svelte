@@ -167,10 +167,10 @@
     function getAlpha(point) {
         let a;
 
-        if (point.gamma_exposure > 0) {
-            a = point.gamma_exposure / data.maximum;
+        if (point.gammaExposure > 0) {
+            a = point.gammaExposure / data.maximum;
         } else {
-            a = Math.abs(point.gamma_exposure / data.minimum);
+            a = Math.abs(point.gammaExposure / data.minimum);
         }
 
         const brightness = data.brightness / 100;
@@ -187,7 +187,7 @@
         let b = 0;
         let a = getAlpha(point);
 
-        if (point.gamma_exposure > 0) {
+        if (point.gammaExposure > 0) {
             r = 255;
         } else {
             g = 255;
