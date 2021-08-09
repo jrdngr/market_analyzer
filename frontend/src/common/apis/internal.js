@@ -1,8 +1,8 @@
 const BASE_URL = `http://localhost:3030`;
 
 export async function getGammaExposure(symbol, options) {
-    return (await graphql_request(`{
-        gammaExposure(symbol: "${symbol}") {
+    return (await graphql_request(`query GammaExposure($symbol: String!, $options: GammaExposureOptions) {
+        gammaExposure(symbol: $symbol, options: $options) {
             prices {
                 strike,
                 gammaExposure,
@@ -11,12 +11,12 @@ export async function getGammaExposure(symbol, options) {
             minimum,
             absoluteMaximum,
         }
-    }`)).gammaExposure;
+    }`, { symbol, options })).gammaExposure;
 }
 
 export async function getQuote(symbol) {
-    return (await graphql_request(`{
-        quote(symbol: "${symbol}") {
+    return (await graphql_request(`query Quote($symbol: String!){
+        quote(symbol: $symbol) {
             symbol,
             last,
             change,
@@ -26,12 +26,12 @@ export async function getQuote(symbol) {
             low,
             close,
         }
-    }`)).quote
+    }`, { symbol })).quote
 }
 
 export async function getOhlc(symbol, interval) {
-    return (await graphql_request(`{
-        ohlc(symbol: "${symbol}", interval: "${interval}") {
+    return (await graphql_request(`query Ohlc($symbol: String!, $interval: String = "5min"){
+        ohlc(symbol: $symbol, interval: $interval) {
             time,
             price,
             open,
@@ -41,20 +41,22 @@ export async function getOhlc(symbol, interval) {
             volume,
             vwap,
         }
-    }`)).ohlc
+    }`, { symbol, interval })).ohlc
 }
 
-async function graphql_request(query) {
+async function graphql_request(query, variables) {
     const escapedQuery = query
         .replace(/\n/g, "\\n")
         .replace(/"/g, "\\\"");
+
+    const variables_json = variables ? JSON.stringify(variables) : "{}";
 
     const response = await fetch(BASE_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: `{ "query": "${escapedQuery}" }`,
+        body: `{ "query": "${escapedQuery}", "variables": ${variables_json} }`,
     });
     return (await response.json()).data;
 }
