@@ -97,7 +97,7 @@
 
     <div class="charts">
         {#if data}
-            <p>Last: {data.quote.last} | Mid: {data.weighted_average_absolute_price} | Price @ Minimum {data.absolute_minimum_price}</p>
+            <p>Last: {data.quote.last} | Mid: {data.weightedAverageAbsolutePrice} | Price @ Minimum {data.absoluteMinimumPrice}</p>
             <GammaExposureChart bind:data={reducedData}/>
         {/if}
     </div>

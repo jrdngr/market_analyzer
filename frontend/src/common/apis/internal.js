@@ -10,6 +10,8 @@ export async function getGammaExposure(symbol, options) {
             maximum,
             minimum,
             absoluteMaximum,
+            weightedAverageAbsolutePrice,
+            absoluteMinimumPrice,
         }
     }`, { symbol, options })).gammaExposure;
 }
