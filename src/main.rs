@@ -1,7 +1,9 @@
 pub mod analysis;
 pub mod data_apis;
+pub mod db;
 pub mod graphql;
 pub mod math;
+pub mod types;
 pub mod utils;
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};

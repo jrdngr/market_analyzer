@@ -1,7 +1,7 @@
 use chrono::{Datelike, Duration, Local};
 use serde::{Deserialize, Serialize};
 
-use crate::graphql::{self as graphql, OhlcInterval};
+use crate::types::{self as graphql, OhlcInterval};
 
 pub async fn get_time_and_sales(
     symbol: &str,

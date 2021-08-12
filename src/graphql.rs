@@ -1,15 +1,5 @@
-use crate::{analysis, data_apis::tradier};
+use crate::{analysis, data_apis::tradier, types::{GammaExposureOptions, GammaExposureStats, Ohlc, OhlcInterval, Quote}};
 use async_graphql::{EmptyMutation, EmptySubscription, Object};
-
-pub mod gex;
-pub mod ohlc;
-pub mod options;
-pub mod quote;
-
-pub use gex::{GammaExposure, GammaExposureOptions, GammaExposureStats};
-pub use ohlc::{Ohlc, OhlcInterval};
-pub use options::{OptionInfo, OptionType};
-pub use quote::Quote;
 
 pub type Schema = async_graphql::Schema<Root, EmptyMutation, EmptySubscription>;
 

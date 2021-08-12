@@ -4,7 +4,7 @@ use chrono::{Date, FixedOffset, Local, TimeZone};
 
 use crate::{
     data_apis::tradier,
-    graphql::{
+    types::{
         gex::{GammaExposure, GammaExposureStats},
         GammaExposureOptions,
     },

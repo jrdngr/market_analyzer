@@ -1,4 +1,4 @@
-use crate::graphql;
+use crate::types;
 use serde::{Deserialize, Serialize};
 
 pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
@@ -63,7 +63,7 @@ struct QuoteResponseInner {
     quote: Quote,
 }
 
-impl From<Quote> for graphql::Quote {
+impl From<Quote> for types::Quote {
     fn from(quote: Quote) -> Self {
         Self {
             symbol: quote.symbol,
