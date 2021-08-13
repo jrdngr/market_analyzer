@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::{GammaExposureStats, OptionInfo};
 
-pub const FILE_NAME: &str = "db.gz";
+pub const FILE_NAME: &str = "data/db.gz";
 
 pub type Symbol = String;
 
@@ -35,10 +35,10 @@ impl FileDb {
         let bytes = std::fs::read(path)?;
 
         let mut decoder = GzDecoder::new(&*bytes);
-        let mut decoded_bytes = Vec::new();
-        decoder.read_exact(&mut decoded_bytes)?;
+        let mut decoded_bytes = String::new();
+        decoder.read_to_string(&mut decoded_bytes)?;
 
-        Ok(serde_json::from_slice(&decoded_bytes)?)
+        Ok(serde_json::from_str(&decoded_bytes)?)
     }
 
     pub fn load() -> anyhow::Result<Self> {
@@ -74,6 +74,10 @@ impl FileDb {
 
     fn write(&self) -> anyhow::Result<()> {
         let json = serde_json::to_vec_pretty(&self)?;
+
+        // Debug
+        // std::fs::write("data/db.json", &json)?;
+
         let mut encoder = GzEncoder::new(Vec::new(), Compression::best());
         encoder.write_all(&json)?;
         let compressed_bytes = encoder.finish()?;
@@ -81,5 +85,42 @@ impl FileDb {
         std::fs::write(FILE_NAME, &compressed_bytes)?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn db() {
+        let mut db = FileDb::new();
+
+        db.add_gamma_exposure_stats(GammaExposureStats::test())
+            .unwrap();
+        db.add_gamma_exposure_stats(GammaExposureStats::test())
+            .unwrap();
+        db.add_gamma_exposure_stats(GammaExposureStats::test())
+            .unwrap();
+
+        db.add_option_info(OptionInfo::test()).unwrap();
+        db.add_option_info(OptionInfo::test()).unwrap();
+        db.add_option_info(OptionInfo::test()).unwrap();
+
+        let gex = db.current_gamma_exposure_stats("TST").unwrap();
+        assert_eq!(gex.symbol, "TST");
+
+        let oi = db.current_option_info("TST").unwrap();
+        assert_eq!(oi.symbol, "TST");
+
+        db.write().unwrap();
+
+        let db2 = FileDb::load().unwrap();
+
+        assert_eq!(
+            db2.current_gamma_exposure_stats("TST").unwrap().symbol,
+            "TST"
+        );
+        assert_eq!(db2.current_option_info("TST").unwrap().symbol, "TST");
     }
 }
