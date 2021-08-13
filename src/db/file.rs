@@ -16,6 +16,7 @@ pub type Symbol = String;
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FileDb {
     gex: HashMap<Symbol, Vec<GammaExposureStats>>,
+    gex_aggregate: HashMap<Symbol, Vec<GammaExposureStats>>,
     options: HashMap<Symbol, Vec<OptionInfo>>,
 }
 
@@ -26,9 +27,10 @@ impl FileDb {
 
     pub fn from_data(
         gex: HashMap<Symbol, Vec<GammaExposureStats>>,
+        gex_aggregate: HashMap<Symbol, Vec<GammaExposureStats>>,
         options: HashMap<Symbol, Vec<OptionInfo>>,
     ) -> Self {
-        Self { gex, options }
+        Self { gex, gex_aggregate, options }
     }
 
     pub fn from_file(path: impl AsRef<Path>) -> anyhow::Result<Self> {
@@ -53,6 +55,14 @@ impl FileDb {
         Ok(())
     }
 
+    pub fn add_gamma_exposure_aggregate(&mut self, data: GammaExposureStats) -> anyhow::Result<()> {
+        let entry = self.gex_aggregate.entry(data.symbol.clone()).or_insert_with(Vec::new);
+        entry.push(data);
+        self.write()?;
+
+        Ok(())
+    }
+
     pub fn add_option_info(&mut self, data: OptionInfo) -> anyhow::Result<()> {
         let entry = self
             .options
@@ -68,8 +78,16 @@ impl FileDb {
         self.gex.get(symbol).map(|v| v.last()).flatten()
     }
 
+    pub fn current_gamma_exposure_aggregate(&self, symbol: &str) -> Option<&GammaExposureStats> {
+        self.gex_aggregate.get(symbol).map(|v| v.last()).flatten()
+    }
+
     pub fn current_option_info(&self, symbol: &str) -> Option<&OptionInfo> {
         self.options.get(symbol).map(|v| v.last()).flatten()
+    }
+
+    pub fn symbols(&self) -> impl Iterator<Item = &String> {
+        self.options.keys()
     }
 
     fn write(&self) -> anyhow::Result<()> {

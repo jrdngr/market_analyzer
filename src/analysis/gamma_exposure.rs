@@ -2,14 +2,7 @@ use std::collections::BTreeMap;
 
 use chrono::{Date, FixedOffset, Local, TimeZone};
 
-use crate::{
-    data_apis::tradier,
-    math::bs::gamma,
-    types::{
-        gex::{GammaExposure, GammaExposureStats},
-        GammaExposureOptions,
-    },
-};
+use crate::{math::bs::gamma, types::{GammaExposureOptions, OptionInfo, OptionType, gex::{GammaExposure, GammaExposureStats}}};
 
 impl GammaExposureStats {
     pub fn new(
@@ -104,12 +97,11 @@ impl GammaExposure {
     }
 }
 
-pub async fn gamma_exposure_by_price(
+pub fn gamma_exposure_by_price(
     symbol: &str,
+    option_chain: Vec<OptionInfo>,
     options: GammaExposureOptions,
 ) -> anyhow::Result<BTreeMap<String, f64>> {
-    let option_chain = tradier::get_option_chain(&symbol.to_uppercase(), options.fresh).await?;
-
     let mut strike_to_gamma_exposure: BTreeMap<String, f64> = BTreeMap::new();
 
     for option in option_chain {
@@ -126,13 +118,13 @@ pub async fn gamma_exposure_by_price(
         }
 
         let strike = option.strike.to_string();
-        if let Some(greeks) = option.greeks {
-            let mut exposure = if greeks.gamma > 1.0 || greeks.gamma < -1.0 {
+        if let Some(gamma) = option.gamma {
+            let mut exposure = if gamma > 1.0 || gamma < -1.0 {
                 0.0
             } else {
-                greeks.gamma * option.open_interest as f64
+                gamma * option.open_interest as f64
             };
-            if option.option_type == "put" {
+            if option.option_type == OptionType::Put {
                 exposure *= -1.0;
             }
             match strike_to_gamma_exposure.get_mut(&strike) {
@@ -147,31 +139,32 @@ pub async fn gamma_exposure_by_price(
     Ok(strike_to_gamma_exposure)
 }
 
-pub async fn gamma_exposure(
+pub fn gamma_exposure(
     symbol: &str,
+    option_chain: Vec<OptionInfo>,
     options: GammaExposureOptions,
 ) -> anyhow::Result<GammaExposureStats> {
     if options.aggregate {
-        gamma_exposure_aggregate(symbol, options).await
+        gamma_exposure_aggregate(symbol, option_chain, options)
     } else {
-        gamma_exposure_stats(symbol, options).await
+        gamma_exposure_stats(symbol, option_chain, options)
     }
 }
 
-pub async fn gamma_exposure_stats(
+pub fn gamma_exposure_stats(
     symbol: &str,
+    option_chain: Vec<OptionInfo>,
     options: GammaExposureOptions,
 ) -> anyhow::Result<GammaExposureStats> {
-    let strike_to_gamma_exposure = gamma_exposure_by_price(symbol, options).await?;
+    let strike_to_gamma_exposure = gamma_exposure_by_price(symbol, option_chain, options)?;
     Ok(GammaExposureStats::new(symbol, &strike_to_gamma_exposure)?)
 }
 
-pub async fn gamma_exposure_aggregate(
+pub fn gamma_exposure_aggregate(
     symbol: &str,
+    option_chain: Vec<OptionInfo>,
     options: GammaExposureOptions,
 ) -> anyhow::Result<GammaExposureStats> {
-    let option_chain = tradier::get_option_chain(&symbol.to_uppercase(), options.fresh).await?;
-
     let now = Local::now().date();
     let mut strike_to_gamma_exposure_aggregate: BTreeMap<String, f64> = BTreeMap::new();
 
@@ -197,7 +190,7 @@ pub async fn gamma_exposure_aggregate(
         let expiration_date = parse_date(&option.expiration_date)?;
         let days_remaining = expiration_date.signed_duration_since(now).num_days();
 
-        let sigma = option.greeks.map(|g| g.mid_iv).unwrap_or(0.0);
+        let sigma = option.mid_iv.unwrap_or(0.0);
         let expiration_time = days_remaining as f64 / 365.0;
         let current_time = 0.0;
         let strike = option.strike;
@@ -212,7 +205,7 @@ pub async fn gamma_exposure_aggregate(
             } else {
                 gamma * option.open_interest as f64
             };
-            if option.option_type == "put" {
+            if option.option_type == OptionType::Put {
                 exposure *= -1.0;
             }
             match strike_to_gamma_exposure_aggregate.get_mut(&price_string) {

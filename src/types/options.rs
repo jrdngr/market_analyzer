@@ -24,6 +24,7 @@ pub struct OptionInfo {
     pub vega: Option<f64>,
     pub rho: Option<f64>,
     pub bid_iv: Option<f64>,
+    pub mid_iv: Option<f64>,
     pub ask_iv: Option<f64>,
     pub smv_vol: Option<f64>,
 }
@@ -69,6 +70,7 @@ impl OptionInfo {
             vega: Some(13.0),
             rho: Some(14.0),
             bid_iv: Some(15.0),
+            mid_iv: Some(18.0),
             ask_iv: Some(16.0),
             smv_vol: Some(17.0),
         }

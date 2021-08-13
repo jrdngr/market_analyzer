@@ -7,11 +7,14 @@ pub mod types;
 pub mod utils;
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use std::convert::Infallible;
+use tokio::sync::Mutex;
+use std::{convert::{Infallible, TryInto}, sync::Arc, time::Duration};
 use warp::{
     http::{Response, StatusCode},
     Filter, Rejection,
 };
+
+use crate::db::FileDb;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -24,7 +27,15 @@ async fn main() -> anyhow::Result<()> {
 
     let frontend = warp::fs::dir("frontend/public");
 
-    let graphql_filter = warp::path("graphql").and(async_graphql_warp::graphql(graphql::schema()).and_then(
+    let db = match FileDb::load() {
+        Ok(db) => db,
+        Err(_) => FileDb::new(),
+    };
+    let db = Arc::new(Mutex::new(db));
+
+    start_db_update_loop(db.clone())?;
+
+    let graphql_filter = warp::path("graphql").and(async_graphql_warp::graphql(db.clone())).and_then(
         |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
             let resp = schema.execute(request).await;
             Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
@@ -60,4 +71,39 @@ async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infallible
         format!("{:?}", err),
         StatusCode::INTERNAL_SERVER_ERROR,
     ))
+}
+
+fn start_db_update_loop(db: Arc<Mutex<FileDb>>) -> anyhow::Result<()> {
+    use data_apis::tradier;
+
+    tokio::task::spawn(async move {
+        let mut option_chain_interval = tokio::time::interval(Duration::from_secs(60 * 60));
+        let mut symbol_delay = tokio::time::interval(Duration::from_secs(30));
+
+        loop {
+            option_chain_interval.tick().await;
+            let db = db.lock().await;
+            for symbol in db.symbols() {
+                match tradier::get_option_chain(&symbol.to_uppercase()).await {
+                    Ok(option_chain) => {
+                        for option in option_chain {
+                            match option.try_into() {
+                                Ok(o) => if let Err(e) = db.add_option_info(o) {
+                                    log::error!("{}", e);
+                                }
+                                Err(e) => log::error!("{}", e),
+                            }
+                        }
+
+                        let gex = analysis::gamma_exposure()
+                    }
+                    Err(e) => {
+                        log::error!("{}", e)
+                    }
+                }
+            }
+        }
+    });
+
+    Ok(())
 }

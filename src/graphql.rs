@@ -1,14 +1,15 @@
-use crate::{
-    analysis,
-    data_apis::tradier,
-    types::{GammaExposureOptions, GammaExposureStats, Ohlc, OhlcInterval, Quote},
-};
+use std::sync::Arc;
+
+use crate::{analysis, data_apis::tradier, db::FileDb, types::{GammaExposureOptions, GammaExposureStats, Ohlc, OhlcInterval, Quote}};
 use async_graphql::{EmptyMutation, EmptySubscription, Object};
+use tokio::sync::Mutex;
 
 pub type Schema = async_graphql::Schema<Root, EmptyMutation, EmptySubscription>;
 
-pub fn schema() -> Schema {
-    async_graphql::Schema::new(Root, EmptyMutation, EmptySubscription)
+pub fn schema(db: Arc<Mutex<FileDb>>) -> Schema {
+    async_graphql::Schema::build(Root, EmptyMutation, EmptySubscription)
+        .data(db)
+        .finish()
 }
 
 pub struct Root;
