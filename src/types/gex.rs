@@ -20,6 +20,8 @@ pub struct GammaExposure {
 
 #[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct GammaExposureStats {
+    pub timestamp: String,
+    pub symbol: String,
     pub prices: Vec<GammaExposure>,
     pub average_absolute_exposure: f64,
     pub average_positive_exposure: f64,

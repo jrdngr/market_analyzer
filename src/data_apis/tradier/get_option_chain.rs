@@ -128,6 +128,7 @@ impl TryFrom<OptionInfo> for types::OptionInfo {
 
     fn try_from(info: OptionInfo) -> Result<Self, Self::Error> {
         Ok(Self {
+            timestamp: Utc::now().to_rfc3339(),
             symbol: info.root_symbol,
             option_type: types::OptionType::from_str(&info.option_type)?,
             strike: info.strike,

@@ -4,15 +4,18 @@ use chrono::{Date, FixedOffset, Local, TimeZone};
 
 use crate::{
     data_apis::tradier,
+    math::bs::gamma,
     types::{
         gex::{GammaExposure, GammaExposureStats},
         GammaExposureOptions,
     },
-    math::bs::gamma,
 };
 
 impl GammaExposureStats {
-    pub fn new(strike_to_gamma_exposure: &BTreeMap<String, f64>) -> anyhow::Result<Self> {
+    pub fn new(
+        symbol: impl Into<String>,
+        strike_to_gamma_exposure: &BTreeMap<String, f64>,
+    ) -> anyhow::Result<Self> {
         let mut positive_sum: f64 = 0.0;
         let mut positive_count = 0;
         let mut negative_sum: f64 = 0.0;
@@ -73,6 +76,8 @@ impl GammaExposureStats {
         prices.sort_by(|p1, p2| p1.strike.cmp(&p2.strike));
 
         Ok(Self {
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            symbol: symbol.into(),
             prices,
             average_absolute_exposure,
             average_positive_exposure,
@@ -158,7 +163,7 @@ pub async fn gamma_exposure_stats(
     options: GammaExposureOptions,
 ) -> anyhow::Result<GammaExposureStats> {
     let strike_to_gamma_exposure = gamma_exposure_by_price(symbol, options).await?;
-    Ok(GammaExposureStats::new(&strike_to_gamma_exposure)?)
+    Ok(GammaExposureStats::new(symbol, &strike_to_gamma_exposure)?)
 }
 
 pub async fn gamma_exposure_aggregate(
@@ -224,6 +229,7 @@ pub async fn gamma_exposure_aggregate(
     // dbg!(&strike_to_gamma_exposure_aggregate);
 
     Ok(GammaExposureStats::new(
+        symbol,
         &strike_to_gamma_exposure_aggregate,
     )?)
 }

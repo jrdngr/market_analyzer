@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct OptionInfo {
+    pub timestamp: String,
     pub symbol: String,
     pub option_type: OptionType,
     pub strike: f64,

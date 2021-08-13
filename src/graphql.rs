@@ -1,4 +1,8 @@
-use crate::{analysis, data_apis::tradier, types::{GammaExposureOptions, GammaExposureStats, Ohlc, OhlcInterval, Quote}};
+use crate::{
+    analysis,
+    data_apis::tradier,
+    types::{GammaExposureOptions, GammaExposureStats, Ohlc, OhlcInterval, Quote},
+};
 use async_graphql::{EmptyMutation, EmptySubscription, Object};
 
 pub type Schema = async_graphql::Schema<Root, EmptyMutation, EmptySubscription>;
