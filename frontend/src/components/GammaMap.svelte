@@ -12,7 +12,7 @@
     let data = null;
     let reducedData = null;
 
-    let showControls = true;
+    let showControls = false;
 
     let minPriceIndex = 0;
     let maxPriceIndex = 1;
@@ -146,7 +146,7 @@
     main {
         background-color: lightgrey;
         border-radius: 10px;
-        margin: 20px;
+        margin: 0px;
         padding: 5px;
     }
 
