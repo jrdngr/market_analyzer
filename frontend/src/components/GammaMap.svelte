@@ -14,8 +14,9 @@
 
     let showControls = true;
 
-    let minPrice = 0;
-    let maxPrice = 0;
+    let minPriceIndex = 0;
+    let maxPriceIndex = 1;
+    let strikes = [0, 1];
     let brightness = 0;
     let highlightStrikes = true;
     let showGradient = false;
@@ -38,6 +39,9 @@
         endDate = endDate.toJSON().slice(0, -8);
 
         let gexData = await getGammaExposure(symbol, options);
+        
+        strikes = gexData.prices.map(p => Number(p.strike));
+        strikes.sort((a, b) => a - b);
 
         const quote = await getQuote(symbol);
         gexData.quote = quote;
@@ -47,9 +51,16 @@
 
         data = gexData;
 
-        const priceOffset = Math.max(2, data.quote.last * 0.01);
-        minPrice = Math.floor(data.quote.low - priceOffset);
-        maxPrice = Math.floor(data.quote.high + priceOffset);
+        if (strikes.length > 1) {
+            for (let i = 1; i < strikes.length; i++) {
+                if (data.quote.low > strikes[i-1] && data.quote.low <= strikes[i]) {
+                    minPriceIndex = i - 1;
+                }
+                if (data.quote.high > strikes[i-1] && data.quote.high <= strikes[i]) {
+                    maxPriceIndex = i;
+                }
+            }
+        }
 
         setInterval(async () => {
             const quote = await getQuote(data.quote.symbol);
@@ -79,7 +90,7 @@
         reducedData = Object.assign({}, data);
 
         reducedData.prices = reducedData.prices
-            .filter(d => d.strike >= minPrice && d.strike <= maxPrice);
+            .filter(d => d.strike >= strikes[minPriceIndex] && d.strike <= strikes[maxPriceIndex]);
             
         reducedData.brightness = brightness;
         reducedData.highlightStrikes = highlightStrikes;
@@ -101,16 +112,8 @@
     </div>
     {#if showControls}
     <div class="controls">
-        Min Price: <input type=number bind:value={minPrice} min=0 step=1 on:change={setData}>
-        Max Price: <input type=number bind:value={maxPrice} min=0 step=1 on:change={setData}>
-        Brightness: <input 
-            type=number 
-            bind:value={brightness} 
-            min=-100
-            max=100 
-            step=1
-            on:change={setData}
-        >
+        <input type="range" min="0" max={maxPriceIndex - 1} step=1 bind:value={minPriceIndex} on:input={setData}>
+        <input type="range" min={minPriceIndex + 1} max={strikes.length - 1} step=1 bind:value={maxPriceIndex} on:input={setData}>
     </div>
     <div class="controls">
         Start date: <input type=datetime-local bind:value={startDate} on:change={setData}>
@@ -120,6 +123,14 @@
         <input type=checkbox bind:checked={highlightStrikes} on:change={setData}> Highlight Strikes
         <input type=checkbox bind:checked={showGradient} on:change={setData}> Show gradient
         <input type=checkbox bind:checked={flipColors} on:change={setData}> Flip colors
+        <input 
+            type=number 
+            bind:value={brightness} 
+            min=-100
+            max=100 
+            step=1
+            on:change={setData}
+        > Brightness
     </div>
     {/if}
     <div class="charts">
@@ -153,7 +164,7 @@
         height: 30px;
     }
 
-    .controls input[type=number] {
-        width: 150px;
+    .controls input[type=range] {
+        width: 49%;
     }
 </style>
