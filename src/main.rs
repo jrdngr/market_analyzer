@@ -22,14 +22,16 @@ async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     pretty_env_logger::init();
 
-    let graphql_filter = async_graphql_warp::graphql(graphql::schema()).and_then(
+    let frontend = warp::fs::dir("frontend/public");
+
+    let graphql_filter = warp::path("graphql").and(async_graphql_warp::graphql(graphql::schema()).and_then(
         |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
             let resp = schema.execute(request).await;
             Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
         },
-    );
+    ));
 
-    let graphql_playground = warp::path::end().and(warp::get()).map(|| {
+    let graphql_playground = warp::path("playground").and(warp::get()).map(|| {
         Response::builder()
             .header("content-type", "text/html")
             .body(playground_source(GraphQLPlaygroundConfig::new("/")))
@@ -40,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
         .allow_methods(vec!["GET", "POST", "PUT", "OPTIONS"])
         .allow_header("content-type");
 
-    let routes = graphql_playground.or(graphql_filter);
+    let routes = frontend.or(graphql_playground).or(graphql_filter);
 
     warp::serve(routes.recover(handle_rejection).with(cors))
         .run(([127, 0, 0, 1], 3030))
