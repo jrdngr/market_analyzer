@@ -152,16 +152,19 @@
 
     h3 {
         font-weight: bold;
+        margin: 0px;
     }
 
     .header {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin: 0px;
     }
 
     .header button {
-        height: 30px;
+        margin: 0px;
+        padding: 0px;
     }
 
     .controls input[type=range] {
