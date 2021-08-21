@@ -82,7 +82,7 @@ Symbol:
     .chart {
         display: flex;
         flex-flow: column;
-        width: 100%;
+        width: 60%;
     }
 
     .chart button {

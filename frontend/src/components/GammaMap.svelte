@@ -18,6 +18,7 @@
     let maxPrice = 0;
     let brightness = 0;
     let highlightStrikes = true;
+    let showGradient = false;
     let flipColors = false;
 
     let startDate = new Date();
@@ -82,6 +83,7 @@
             
         reducedData.brightness = brightness;
         reducedData.highlightStrikes = highlightStrikes;
+        reducedData.showGradient = showGradient;
         reducedData.flipColors = flipColors;
         reducedData.startDate = startDate;
         reducedData.endDate = endDate;
@@ -116,6 +118,7 @@
     </div>
     <div class="controls">
         <input type=checkbox bind:checked={highlightStrikes} on:change={setData}> Highlight Strikes
+        <input type=checkbox bind:checked={showGradient} on:change={setData}> Show gradient
         <input type=checkbox bind:checked={flipColors} on:change={setData}> Flip colors
     </div>
     {/if}

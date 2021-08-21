@@ -65,41 +65,42 @@
             .domain([minPrice, maxPrice])
             .range([height - margin.bottom, margin.top]);
 
-        /* 
-         * Draw background
-         */
-        const gradient = svg
-            .append("linearGradient")
-            .attr("id", `exposure-gradient-${componentId}`)
-            .attr("x1", "0%")
-            .attr("x2", "0%")
-            .attr("y1", "100%")
-            .attr("y2", "0%");
-        
-        const gradientOffset = (point) => {
-            const strike = point.strike;
+        if (data.showGradient) {
+            /* 
+            * Draw background
+            */
+            const gradient = svg
+                .append("linearGradient")
+                .attr("id", `exposure-gradient-${componentId}`)
+                .attr("x1", "0%")
+                .attr("x2", "0%")
+                .attr("y1", "100%")
+                .attr("y2", "0%");
             
-            const position = y(strike) - 0.5;
-            const [min, max] = y.range();
-            
-            const strikeRatio = (position - min) / (max - min);
-            return strikeRatio;
-        };
+            const gradientOffset = (point) => {
+                const strike = point.strike;
+                
+                const position = y(strike) - 0.5;
+                const [min, max] = y.range();
+                
+                const strikeRatio = (position - min) / (max - min);
+                return strikeRatio;
+            };
 
-        gradient
-            .selectAll("stop")
-            .data(prices)
-            .join("stop")
-            .attr("offset", gradientOffset)
-            .style("stop-color", getColor);
+            gradient
+                .selectAll("stop")
+                .data(prices)
+                .join("stop")
+                .attr("offset", gradientOffset)
+                .style("stop-color", getColor);
 
-        svg.append("rect")
-            .attr("fill", `url(#exposure-gradient-${componentId})`)
-            .attr("x", x.range()[0])
-            .attr("y", y.range()[1])
-            .attr("width", x.range()[1] - x.range()[0])
-            .attr("height", y.range()[0] - y.range()[1]);
-
+            svg.append("rect")
+                .attr("fill", `url(#exposure-gradient-${componentId})`)
+                .attr("x", x.range()[0])
+                .attr("y", y.range()[1])
+                .attr("width", x.range()[1] - x.range()[0])
+                .attr("height", y.range()[0] - y.range()[1]);
+        }
 
         /* 
          * Draw lines with the gradient stop color at each strike price
