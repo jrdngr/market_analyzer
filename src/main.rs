@@ -45,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
     let routes = frontend.or(graphql_playground).or(graphql_filter);
 
     warp::serve(routes.recover(handle_rejection).with(cors))
-        .run(([127, 0, 0, 1], 3030))
+        .run(([127, 0, 0, 1], 3000))
         .await;
 
     Ok(())
