@@ -1,9 +1,7 @@
-* Run on raspberry pi
 * Add Rayon to backend and implement for aggregate calcs
 * Option to plot calls and puts separately
 * Add vanna
 * Permanent storage of options data
-* Dockerize and deploy remotely
 * Fix outlier coloring on gamma map. NDX map is useless with a single massive strike
 * Hybrid gamma map. Aggregate background gradient, per-strike lines
 * Market internals summary
