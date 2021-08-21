@@ -1,4 +1,4 @@
-const BASE_URL = `${window.location.origin}/graphql`;
+const BASE_URL = isProduction ? `${window.location.origin}/graphql` : `http://localhost:3030/graphql`;
 
 export async function getGammaExposure(symbol, options) {
     return (await graphql_request(`query GammaExposure($symbol: String!, $options: GammaExposureOptions) {
