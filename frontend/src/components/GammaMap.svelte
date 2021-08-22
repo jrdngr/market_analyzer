@@ -63,7 +63,6 @@
 
         if (strikes.length > 1) {
             const priceOffset = Math.max(1, data.quote.last * 0.0025);
-            console.log(`${symbol}: ${priceOffset}`);
             const low = data.quote.low - priceOffset;
             const high = data.quote.high + priceOffset;
 
