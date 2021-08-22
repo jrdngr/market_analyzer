@@ -1,0 +1,11 @@
+[tasks.run]
+dependencies = ["build-frontend"]
+command = "cargo"
+args = ["run", "--release"]
+
+[tasks.build-frontend]
+script = [
+    "cd frontend",
+    "npm install",
+    "npm run build"
+]
