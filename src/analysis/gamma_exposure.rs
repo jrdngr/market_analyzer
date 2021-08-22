@@ -20,8 +20,8 @@ impl GammaExposureStats {
         let mut positive_count = 0;
         let mut negative_sum: f64 = 0.0;
         let mut negative_count = 0;
-        let mut maximum: f64 = 0.0;
-        let mut minimum: f64 = 0.0;
+        let mut maximum_gamma_exposure: f64 = 0.0;
+        let mut minimum_gamma_exposure: f64 = 0.0;
         let mut absolute_maximum: f64 = 0.0;
         let mut absolute_minimum: f64 = f64::MAX;
         let mut weighted_positive_sum: f64 = 0.0;
@@ -40,8 +40,8 @@ impl GammaExposureStats {
                 weighted_negative_sum += strike * *exposure;
                 negative_count += 1;
             }
-            maximum = maximum.max(*exposure);
-            minimum = minimum.min(*exposure);
+            maximum_gamma_exposure = maximum_gamma_exposure.max(*exposure);
+            minimum_gamma_exposure = minimum_gamma_exposure.min(*exposure);
 
             if exposure.abs() >= absolute_maximum {
                 absolute_maximum = exposure.abs();
@@ -82,8 +82,8 @@ impl GammaExposureStats {
             average_absolute_exposure,
             average_positive_exposure,
             average_negative_exposure,
-            maximum,
-            minimum,
+            maximum_gamma_exposure,
+            minimum_gamma_exposure,
             absolute_maximum,
             absolute_minimum,
             weighted_average_absolute_price,

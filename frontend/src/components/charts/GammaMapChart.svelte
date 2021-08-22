@@ -169,9 +169,9 @@
         let a;
 
         if (point.gammaExposure > 0) {
-            a = point.gammaExposure / data.maximum;
+            a = point.gammaExposure / data.maximumGammaExposure;
         } else {
-            a = Math.abs(point.gammaExposure / data.minimum);
+            a = Math.abs(point.gammaExposure / data.maximumGammaExposure);
         }
 
         const brightness = data.brightness / 100;

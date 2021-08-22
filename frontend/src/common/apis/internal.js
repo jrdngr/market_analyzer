@@ -7,8 +7,8 @@ export async function getGammaExposure(symbol, options) {
                 strike,
                 gammaExposure,
             }
-            maximum,
-            minimum,
+            maximumGammaExposure,
+            minimumGammaExposure,
             absoluteMaximum,
             weightedAverageAbsolutePrice,
             absoluteMinimumPrice,
