@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
+    analysis::gamma_exposure::{gamma_exposure, gamma_exposure_aggregate},
     data_apis::tradier,
-    db::FileDb,
+    db::{self, FileDb},
     types::{GammaExposureStats, Ohlc, OhlcInterval, Quote},
 };
 use async_graphql::{Context, EmptyMutation, EmptySubscription, Object};
@@ -41,12 +42,11 @@ impl Root {
         symbol: String,
     ) -> anyhow::Result<GammaExposureStats> {
         let db = context
-            .data::<FileDb>()
+            .data::<Arc<Mutex<FileDb>>>()
             .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
-        let gex = db
-            .current_gamma_exposure(&symbol)
-            .ok_or_else(|| anyhow::anyhow!("No data found"))?;
-        Ok(gex.clone())
+        let option_chain = db::option_chain(&symbol, db.clone()).await?;
+        let gex = gamma_exposure(&symbol, &option_chain).unwrap();
+        Ok(gex)
     }
 
     async fn gamma_exposure_aggregate(
@@ -55,12 +55,11 @@ impl Root {
         symbol: String,
     ) -> anyhow::Result<GammaExposureStats> {
         let db = context
-            .data::<FileDb>()
+            .data::<Arc<Mutex<FileDb>>>()
             .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
-        let gex = db
-            .current_gamma_exposure_aggregate(&symbol)
-            .ok_or_else(|| anyhow::anyhow!("No data found"))?;
-        Ok(gex.clone())
+        let option_chain = db::option_chain(&symbol, db.clone()).await?;
+        let gex_agg = gamma_exposure_aggregate(&symbol, &option_chain).unwrap();
+        Ok(gex_agg)
     }
 }
 

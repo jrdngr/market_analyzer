@@ -1,8 +1,8 @@
 const BASE_URL = isProduction ? `${window.location.origin}/graphql` : `http://localhost:3030/graphql`;
 
-export async function getGammaExposure(symbol, options) {
-    return (await graphql_request(`query GammaExposure($symbol: String!, $options: GammaExposureOptions) {
-        gammaExposure(symbol: $symbol, options: $options) {
+export async function getGammaExposure(symbol) {
+    return (await graphql_request(`query GammaExposure($symbol: String!) {
+        gammaExposure(symbol: $symbol) {
             prices {
                 strike,
                 gammaExposure,
@@ -13,7 +13,7 @@ export async function getGammaExposure(symbol, options) {
             weightedAverageAbsolutePrice,
             absoluteMinimumPrice,
         }
-    }`, { symbol, options })).gammaExposure;
+    }`, { symbol })).gammaExposure;
 }
 
 export async function getQuote(symbol) {

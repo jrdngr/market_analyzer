@@ -1,38 +1,36 @@
 use std::{
     collections::HashMap,
     io::{Read, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use serde::{Deserialize, Serialize};
 
-use crate::types::{GammaExposureStats, OptionInfo};
+use crate::types::OptionInfo;
 
-pub const FILE_NAME: &str = "data/db.gz";
+pub const DEFAULT_FILE_PATH: &str = "data/db.gz";
 
 pub type Symbol = String;
+pub type OptionSnapshot = Vec<OptionInfo>;
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FileDb {
-    gex: HashMap<Symbol, Vec<GammaExposureStats>>,
-    gex_aggregate: HashMap<Symbol, Vec<GammaExposureStats>>,
-    options: HashMap<Symbol, Vec<OptionInfo>>,
+    file_path: PathBuf,
+    options: HashMap<Symbol, Vec<OptionSnapshot>>,
 }
 
 impl FileDb {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(path: impl AsRef<Path>) -> Self {
+        Self::from_data(path, HashMap::new())
     }
 
     pub fn from_data(
-        gex: HashMap<Symbol, Vec<GammaExposureStats>>,
-        gex_aggregate: HashMap<Symbol, Vec<GammaExposureStats>>,
-        options: HashMap<Symbol, Vec<OptionInfo>>,
+        path: impl AsRef<Path>,
+        options: HashMap<Symbol, Vec<OptionSnapshot>>,
     ) -> Self {
         Self {
-            gex,
-            gex_aggregate,
+            file_path: path.as_ref().into(),
             options,
         }
     }
@@ -48,48 +46,26 @@ impl FileDb {
     }
 
     pub fn load() -> anyhow::Result<Self> {
-        Self::from_file(FILE_NAME)
+        Self::from_file(DEFAULT_FILE_PATH)
     }
 
-    pub fn add_gamma_exposure(&mut self, data: GammaExposureStats) -> anyhow::Result<()> {
-        let entry = self.gex.entry(data.symbol.clone()).or_insert_with(Vec::new);
-        entry.push(data);
-        self.write()?;
-
-        Ok(())
-    }
-
-    pub fn add_gamma_exposure_aggregate(&mut self, data: GammaExposureStats) -> anyhow::Result<()> {
-        let entry = self
-            .gex_aggregate
-            .entry(data.symbol.clone())
-            .or_insert_with(Vec::new);
-        entry.push(data);
-        self.write()?;
-
-        Ok(())
-    }
-
-    pub fn add_option_info(&mut self, data: OptionInfo) -> anyhow::Result<()> {
+    pub fn add_option_info(&mut self, symbol: &str, data: Vec<OptionInfo>) -> anyhow::Result<()> {
         let entry = self
             .options
-            .entry(data.symbol.clone())
+            .entry(symbol.to_string())
             .or_insert_with(Vec::new);
+
         entry.push(data);
         self.write()?;
 
         Ok(())
     }
 
-    pub fn current_gamma_exposure(&self, symbol: &str) -> Option<&GammaExposureStats> {
-        self.gex.get(symbol).map(|v| v.last()).flatten()
+    pub fn has_symbol(&self, symbol: &str) -> bool {
+        self.options.contains_key(symbol)
     }
 
-    pub fn current_gamma_exposure_aggregate(&self, symbol: &str) -> Option<&GammaExposureStats> {
-        self.gex_aggregate.get(symbol).map(|v| v.last()).flatten()
-    }
-
-    pub fn current_option_info(&self, symbol: &str) -> Option<&OptionInfo> {
+    pub fn option_chain(&self, symbol: &str) -> Option<&Vec<OptionInfo>> {
         self.options.get(symbol).map(|v| v.last()).flatten()
     }
 
@@ -107,9 +83,15 @@ impl FileDb {
         encoder.write_all(&json)?;
         let compressed_bytes = encoder.finish()?;
 
-        std::fs::write(FILE_NAME, &compressed_bytes)?;
+        std::fs::write(&self.file_path, &compressed_bytes)?;
 
         Ok(())
+    }
+}
+
+impl Default for FileDb {
+    fn default() -> Self {
+        Self::new(DEFAULT_FILE_PATH)
     }
 }
 
@@ -117,29 +99,23 @@ impl FileDb {
 mod tests {
     use super::*;
 
+    pub const TEST_FILE_PATH: &str = "data/test_db.gz";
+
     #[test]
     fn db() {
-        let mut db = FileDb::new();
+        let mut db = FileDb::new(TEST_FILE_PATH);
 
-        db.add_gamma_exposure(GammaExposureStats::test()).unwrap();
-        db.add_gamma_exposure(GammaExposureStats::test()).unwrap();
-        db.add_gamma_exposure(GammaExposureStats::test()).unwrap();
+        db.add_option_info("TST", vec![OptionInfo::test()]).unwrap();
+        db.add_option_info("TST", vec![OptionInfo::test()]).unwrap();
+        db.add_option_info("TST", vec![OptionInfo::test()]).unwrap();
 
-        db.add_option_info(OptionInfo::test()).unwrap();
-        db.add_option_info(OptionInfo::test()).unwrap();
-        db.add_option_info(OptionInfo::test()).unwrap();
-
-        let gex = db.current_gamma_exposure("TST").unwrap();
-        assert_eq!(gex.symbol, "TST");
-
-        let oi = db.current_option_info("TST").unwrap();
-        assert_eq!(oi.symbol, "TST");
+        let oi = db.option_chain("TST").unwrap();
+        assert_eq!(oi[0].symbol, "TST");
 
         db.write().unwrap();
 
-        let db2 = FileDb::load().unwrap();
+        let db2 = FileDb::from_file(TEST_FILE_PATH).unwrap();
 
-        assert_eq!(db2.current_gamma_exposure("TST").unwrap().symbol, "TST");
-        assert_eq!(db2.current_option_info("TST").unwrap().symbol, "TST");
+        assert_eq!(db2.option_chain("TST").unwrap()[0].symbol, "TST");
     }
 }
