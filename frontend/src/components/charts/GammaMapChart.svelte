@@ -15,6 +15,8 @@
 
         const [minPrice, maxPrice] = d3.extent(data.prices, d => d.strike);
         const prices = data.prices.filter(p => p.strike >= minPrice && p.strike <= maxPrice);
+        const strikes = prices.map(p => Number(p.strike));
+        strikes.sort((a, b) => a - b);
 
         el.textContent = "";
 
@@ -38,7 +40,7 @@
 
         const yAxis = g => g
             .attr("transform", `translate(${margin.left},0)`)
-            .call(d3.axisLeft(y))
+            .call(d3.axisLeft(y).tickValues(strikes))
             .call(g => g.select(".domain").remove());
 
         const svg = d3.create("svg")
