@@ -26,11 +26,21 @@
     startDate.setHours(5);
     startDate.setMinutes(30);
     startDate.setMilliseconds(0);
-    
+  
     let endDate = new Date();
     endDate.setHours(12);
     endDate.setMinutes(0);
     endDate.setMilliseconds(0);
+
+    let day = startDate.getDay();
+    let dateOffset = 0;
+    if (day === 0) {
+        dateOffset = 2;
+    } else if (day === 6) {
+        dateOffset = 1;
+    }
+    startDate.setDate(startDate.getDate() - dateOffset);
+    endDate.setDate(endDate.getDate() - dateOffset);
 
 	onMount(async () => {
         console.log("Fetching data");
@@ -52,11 +62,16 @@
         data = gexData;
 
         if (strikes.length > 1) {
+            const priceOffset = Math.max(1, data.quote.last * 0.0025);
+            console.log(`${symbol}: ${priceOffset}`);
+            const low = data.quote.low - priceOffset;
+            const high = data.quote.high + priceOffset;
+
             for (let i = 1; i < strikes.length; i++) {
-                if (data.quote.low > strikes[i-1] && data.quote.low <= strikes[i]) {
+                if (low > strikes[i-1] && low <= strikes[i]) {
                     minPriceIndex = i - 1;
                 }
-                if (data.quote.high > strikes[i-1] && data.quote.high <= strikes[i]) {
+                if (high > strikes[i-1] && high <= strikes[i]) {
                     maxPriceIndex = i;
                 }
             }
