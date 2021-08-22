@@ -49,16 +49,16 @@ impl FileDb {
         Self::from_file(DEFAULT_FILE_PATH)
     }
 
-    pub fn add_option_info(&mut self, symbol: &str, data: Vec<OptionInfo>) -> anyhow::Result<()> {
+    pub fn add_option_info(&mut self, symbol: &str, data: Vec<OptionInfo>) {
         let entry = self
             .options
             .entry(symbol.to_string())
             .or_insert_with(Vec::new);
 
         entry.push(data);
-        self.write()?;
-
-        Ok(())
+        if let Err(e) = self.write() {
+            log::error!("{}", e);
+        }
     }
 
     pub fn has_symbol(&self, symbol: &str) -> bool {
@@ -83,6 +83,9 @@ impl FileDb {
         encoder.write_all(&json)?;
         let compressed_bytes = encoder.finish()?;
 
+        if let Some(parent) = self.file_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
         std::fs::write(&self.file_path, &compressed_bytes)?;
 
         Ok(())
@@ -105,9 +108,9 @@ mod tests {
     fn db() {
         let mut db = FileDb::new(TEST_FILE_PATH);
 
-        db.add_option_info("TST", vec![OptionInfo::test()]).unwrap();
-        db.add_option_info("TST", vec![OptionInfo::test()]).unwrap();
-        db.add_option_info("TST", vec![OptionInfo::test()]).unwrap();
+        db.add_option_info("TST", vec![OptionInfo::test()]);
+        db.add_option_info("TST", vec![OptionInfo::test()]);
+        db.add_option_info("TST", vec![OptionInfo::test()]);
 
         let oi = db.option_chain("TST").unwrap();
         assert_eq!(oi[0].symbol, "TST");

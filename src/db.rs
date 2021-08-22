@@ -71,7 +71,7 @@ pub async fn update_symbol(symbol: &str, db: Arc<Mutex<FileDb>>) -> anyhow::Resu
     log::info!("Updating data for {}", symbol);
     let option_chain = tradier::get_option_chain(&symbol.to_uppercase()).await?;
     let mut db = db.lock().await;
-    db.add_option_info(&symbol, option_chain)?;
+    db.add_option_info(&symbol, option_chain);
     log::info!("Successfully updated data for {}", symbol);
 
     Ok(())
