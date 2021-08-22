@@ -8,7 +8,7 @@
             <GammaMap symbol="SPY"/>
         </div>
         <div class="map">
-            <GammaMap symbol="QQQ"/>
+            <GammaMap symbol="SPY"/>
         </div>
     </div>
     <div class="row">

@@ -17,7 +17,7 @@
     let minPriceIndex = 0;
     let maxPriceIndex = 1;
     let strikes = [0, 1];
-    let brightness = 0;
+    let brightness = 3;
     let highlightStrikes = true;
     let showGradient = false;
     let flipColors = false;
@@ -140,8 +140,8 @@
         <input 
             type=number 
             bind:value={brightness} 
-            min=-100
-            max=100 
+            min=1
+            max=10 
             step=1
             on:change={setData}
         > Brightness

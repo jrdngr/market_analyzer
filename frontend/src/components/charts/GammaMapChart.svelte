@@ -112,8 +112,8 @@
                 .data(prices)
                 .join("rect")
                 .attr("x", margin.left)
-                .attr("y", d => y(d.strike) - 0.5)
-                .attr("height", 1)
+                .attr("y", d => y(d.strike) - 2.5)
+                .attr("height", 5)
                 .attr("width", width)
                 .attr("fill", getColor);
         }
@@ -174,8 +174,9 @@
             a = Math.abs(point.gammaExposure / data.maximumGammaExposure);
         }
 
-        const brightness = data.brightness / 100;
-        a = Math.min(a + brightness, 1.0);
+        a = ((data.brightness) * a) / (a + 1);
+
+        a = Math.min(a, 1.0);
         a = Math.max(a, 0.0);
         a = Math.floor(a * 255);
 
