@@ -19,6 +19,7 @@ pub enum MarketState {
     Open,
     PostMarket,
     Closed,
+    Other(String),
 }
 
 impl FromStr for MarketState {
@@ -30,7 +31,7 @@ impl FromStr for MarketState {
             "open" => Ok(MarketState::Open),
             "postmarket" => Ok(MarketState::PostMarket),
             "closed" => Ok(MarketState::Closed),
-            _ => anyhow::bail!("Invalid market state {}", s),
+            _ => Ok(MarketState::Other(s.to_string())),
         }
     }
 }
@@ -42,6 +43,7 @@ impl Display for MarketState {
             MarketState::Open => write!(f, "Open"),
             MarketState::PostMarket => write!(f, "Post-Market"),
             MarketState::Closed => write!(f, "Closed"),
+            MarketState::Other(s) => write!(f, "{}", s),
         }
     }
 }
