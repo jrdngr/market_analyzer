@@ -7,14 +7,17 @@ pub mod types;
 pub mod utils;
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use std::{convert::Infallible, sync::Arc, time::Duration};
 use tokio::sync::Mutex;
-use std::{convert::{Infallible, TryInto}, sync::Arc, time::Duration};
 use warp::{
     http::{Response, StatusCode},
     Filter, Rejection,
 };
 
-use crate::db::FileDb;
+use crate::{
+    analysis::gamma_exposure::{gamma_exposure, gamma_exposure_aggregate},
+    db::FileDb,
+};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -35,12 +38,14 @@ async fn main() -> anyhow::Result<()> {
 
     start_db_update_loop(db.clone())?;
 
-    let graphql_filter = warp::path("graphql").and(async_graphql_warp::graphql(db.clone())).and_then(
-        |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
-            let resp = schema.execute(request).await;
-            Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
-        },
-    ));
+    let graphql_filter = warp::path("graphql").and(
+        async_graphql_warp::graphql(graphql::schema(db.clone())).and_then(
+            |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
+                let resp = schema.execute(request).await;
+                Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
+            },
+        ),
+    );
 
     let graphql_playground = warp::path("playground").and(warp::get()).map(|| {
         Response::builder()
@@ -74,36 +79,40 @@ async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infallible
 }
 
 fn start_db_update_loop(db: Arc<Mutex<FileDb>>) -> anyhow::Result<()> {
-    use data_apis::tradier;
-
     tokio::task::spawn(async move {
         let mut option_chain_interval = tokio::time::interval(Duration::from_secs(60 * 60));
-        let mut symbol_delay = tokio::time::interval(Duration::from_secs(30));
-
         loop {
             option_chain_interval.tick().await;
-            let db = db.lock().await;
-            for symbol in db.symbols() {
-                match tradier::get_option_chain(&symbol.to_uppercase()).await {
-                    Ok(option_chain) => {
-                        for option in option_chain {
-                            match option.try_into() {
-                                Ok(o) => if let Err(e) = db.add_option_info(o) {
-                                    log::error!("{}", e);
-                                }
-                                Err(e) => log::error!("{}", e),
-                            }
-                        }
-
-                        let gex = analysis::gamma_exposure()
-                    }
-                    Err(e) => {
-                        log::error!("{}", e)
-                    }
-                }
+            if let Err(e) = update_data(db.clone()).await {
+                log::error!("{}", e);
             }
         }
     });
+
+    Ok(())
+}
+
+async fn update_data(db: Arc<Mutex<FileDb>>) -> anyhow::Result<()> {
+    use data_apis::tradier;
+
+    let mut symbol_delay = tokio::time::interval(Duration::from_secs(30));
+    let mut db = db.lock().await;
+
+    for symbol in db.symbols() {
+        log::info!("Updating data for {}", symbol);
+        let option_chain = tradier::get_option_chain(&symbol.to_uppercase()).await?;
+        for option in &option_chain {
+            db.add_option_info(option.clone())?;
+        }
+
+        let gex = gamma_exposure(&symbol, &option_chain)?;
+        db.add_gamma_exposure(gex)?;
+
+        let gex_agg = gamma_exposure_aggregate(&symbol, &option_chain)?;
+        db.add_gamma_exposure_aggregate(gex_agg)?;
+
+        symbol_delay.tick().await;
+    }
 
     Ok(())
 }

@@ -2,7 +2,13 @@ use std::collections::BTreeMap;
 
 use chrono::{Date, FixedOffset, Local, TimeZone};
 
-use crate::{math::bs::gamma, types::{GammaExposureOptions, OptionInfo, OptionType, gex::{GammaExposure, GammaExposureStats}}};
+use crate::{
+    math::bs::gamma,
+    types::{
+        gex::{GammaExposure, GammaExposureStats},
+        OptionInfo, OptionType,
+    },
+};
 
 impl GammaExposureStats {
     pub fn new(
@@ -97,29 +103,13 @@ impl GammaExposure {
     }
 }
 
-pub fn gamma_exposure_by_price(
-    symbol: &str,
-    option_chain: Vec<OptionInfo>,
-    options: GammaExposureOptions,
-) -> anyhow::Result<BTreeMap<String, f64>> {
+pub fn gamma_exposure_by_price(option_chain: &[OptionInfo]) -> BTreeMap<String, f64> {
     let mut strike_to_gamma_exposure: BTreeMap<String, f64> = BTreeMap::new();
 
     for option in option_chain {
-        if let Some(min) = options.min_strike {
-            if option.strike < min {
-                continue;
-            }
-        }
-
-        if let Some(max) = options.max_strike {
-            if option.strike > max {
-                continue;
-            }
-        }
-
         let strike = option.strike.to_string();
         if let Some(gamma) = option.gamma {
-            let mut exposure = if gamma > 1.0 || gamma < -1.0 {
+            let mut exposure = if !(-1.0..=1.0).contains(&gamma) {
                 0.0
             } else {
                 gamma * option.open_interest as f64
@@ -136,53 +126,35 @@ pub fn gamma_exposure_by_price(
         }
     }
 
-    Ok(strike_to_gamma_exposure)
+    strike_to_gamma_exposure
 }
 
 pub fn gamma_exposure(
     symbol: &str,
-    option_chain: Vec<OptionInfo>,
-    options: GammaExposureOptions,
+    option_chain: &[OptionInfo],
 ) -> anyhow::Result<GammaExposureStats> {
-    if options.aggregate {
-        gamma_exposure_aggregate(symbol, option_chain, options)
-    } else {
-        gamma_exposure_stats(symbol, option_chain, options)
-    }
-}
-
-pub fn gamma_exposure_stats(
-    symbol: &str,
-    option_chain: Vec<OptionInfo>,
-    options: GammaExposureOptions,
-) -> anyhow::Result<GammaExposureStats> {
-    let strike_to_gamma_exposure = gamma_exposure_by_price(symbol, option_chain, options)?;
-    Ok(GammaExposureStats::new(symbol, &strike_to_gamma_exposure)?)
+    let strike_to_gamma_exposure = gamma_exposure_by_price(option_chain);
+    GammaExposureStats::new(symbol, &strike_to_gamma_exposure)
 }
 
 pub fn gamma_exposure_aggregate(
     symbol: &str,
-    option_chain: Vec<OptionInfo>,
-    options: GammaExposureOptions,
+    option_chain: &[OptionInfo],
 ) -> anyhow::Result<GammaExposureStats> {
     let now = Local::now().date();
     let mut strike_to_gamma_exposure_aggregate: BTreeMap<String, f64> = BTreeMap::new();
 
-    let min_price = options.min_strike.unwrap_or_else(|| {
-        option_chain
-            .iter()
-            .map(|o| o.strike)
-            .min_by(|s1, s2| s1.partial_cmp(s2).unwrap_or(std::cmp::Ordering::Less))
-            .unwrap_or(0.0)
-    });
+    let min_price = option_chain
+        .iter()
+        .map(|o| o.strike)
+        .min_by(|s1, s2| s1.partial_cmp(s2).unwrap_or(std::cmp::Ordering::Less))
+        .unwrap_or(0.0);
 
-    let max_price = options.max_strike.unwrap_or_else(|| {
-        option_chain
-            .iter()
-            .map(|o| o.strike)
-            .max_by(|s1, s2| s1.partial_cmp(s2).unwrap_or(std::cmp::Ordering::Less))
-            .unwrap_or(0.0)
-    });
+    let max_price = option_chain
+        .iter()
+        .map(|o| o.strike)
+        .max_by(|s1, s2| s1.partial_cmp(s2).unwrap_or(std::cmp::Ordering::Less))
+        .unwrap_or(0.0);
 
     let price_offset = 0.5;
 
@@ -219,12 +191,7 @@ pub fn gamma_exposure_aggregate(
         }
     }
 
-    // dbg!(&strike_to_gamma_exposure_aggregate);
-
-    Ok(GammaExposureStats::new(
-        symbol,
-        &strike_to_gamma_exposure_aggregate,
-    )?)
+    GammaExposureStats::new(symbol, &strike_to_gamma_exposure_aggregate)
 }
 
 fn parse_date(date: &str) -> anyhow::Result<Date<FixedOffset>> {

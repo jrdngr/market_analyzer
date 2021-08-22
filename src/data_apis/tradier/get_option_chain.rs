@@ -1,15 +1,14 @@
-use std::{convert::TryFrom, str::FromStr};
+use std::{
+    convert::{TryFrom, TryInto},
+    str::FromStr,
+};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use crate::types;
 
-const DATA_PATH: &str = "data";
-
-pub async fn get_option_chain(
-    symbol: &str,
-) -> anyhow::Result<Vec<OptionInfo>> {
+pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<types::OptionInfo>> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
 
     let expirations = super::get_option_expirations(symbol).await?;
@@ -34,11 +33,14 @@ pub async fn get_option_chain(
         result.extend(response.options.option);
     }
 
-    Ok(result)
+    let result: anyhow::Result<Vec<types::OptionInfo>> =
+        result.into_iter().map(TryInto::try_into).collect();
+
+    Ok(result?)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct OptionInfo {
+struct OptionInfo {
     pub symbol: String,
     pub description: String,
     pub exch: String,

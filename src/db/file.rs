@@ -30,7 +30,11 @@ impl FileDb {
         gex_aggregate: HashMap<Symbol, Vec<GammaExposureStats>>,
         options: HashMap<Symbol, Vec<OptionInfo>>,
     ) -> Self {
-        Self { gex, gex_aggregate, options }
+        Self {
+            gex,
+            gex_aggregate,
+            options,
+        }
     }
 
     pub fn from_file(path: impl AsRef<Path>) -> anyhow::Result<Self> {
@@ -47,7 +51,7 @@ impl FileDb {
         Self::from_file(FILE_NAME)
     }
 
-    pub fn add_gamma_exposure_stats(&mut self, data: GammaExposureStats) -> anyhow::Result<()> {
+    pub fn add_gamma_exposure(&mut self, data: GammaExposureStats) -> anyhow::Result<()> {
         let entry = self.gex.entry(data.symbol.clone()).or_insert_with(Vec::new);
         entry.push(data);
         self.write()?;
@@ -56,7 +60,10 @@ impl FileDb {
     }
 
     pub fn add_gamma_exposure_aggregate(&mut self, data: GammaExposureStats) -> anyhow::Result<()> {
-        let entry = self.gex_aggregate.entry(data.symbol.clone()).or_insert_with(Vec::new);
+        let entry = self
+            .gex_aggregate
+            .entry(data.symbol.clone())
+            .or_insert_with(Vec::new);
         entry.push(data);
         self.write()?;
 
@@ -74,7 +81,7 @@ impl FileDb {
         Ok(())
     }
 
-    pub fn current_gamma_exposure_stats(&self, symbol: &str) -> Option<&GammaExposureStats> {
+    pub fn current_gamma_exposure(&self, symbol: &str) -> Option<&GammaExposureStats> {
         self.gex.get(symbol).map(|v| v.last()).flatten()
     }
 
@@ -86,8 +93,8 @@ impl FileDb {
         self.options.get(symbol).map(|v| v.last()).flatten()
     }
 
-    pub fn symbols(&self) -> impl Iterator<Item = &String> {
-        self.options.keys()
+    pub fn symbols(&self) -> Vec<String> {
+        self.options.keys().cloned().collect()
     }
 
     fn write(&self) -> anyhow::Result<()> {
@@ -114,18 +121,15 @@ mod tests {
     fn db() {
         let mut db = FileDb::new();
 
-        db.add_gamma_exposure_stats(GammaExposureStats::test())
-            .unwrap();
-        db.add_gamma_exposure_stats(GammaExposureStats::test())
-            .unwrap();
-        db.add_gamma_exposure_stats(GammaExposureStats::test())
-            .unwrap();
+        db.add_gamma_exposure(GammaExposureStats::test()).unwrap();
+        db.add_gamma_exposure(GammaExposureStats::test()).unwrap();
+        db.add_gamma_exposure(GammaExposureStats::test()).unwrap();
 
         db.add_option_info(OptionInfo::test()).unwrap();
         db.add_option_info(OptionInfo::test()).unwrap();
         db.add_option_info(OptionInfo::test()).unwrap();
 
-        let gex = db.current_gamma_exposure_stats("TST").unwrap();
+        let gex = db.current_gamma_exposure("TST").unwrap();
         assert_eq!(gex.symbol, "TST");
 
         let oi = db.current_option_info("TST").unwrap();
@@ -135,10 +139,7 @@ mod tests {
 
         let db2 = FileDb::load().unwrap();
 
-        assert_eq!(
-            db2.current_gamma_exposure_stats("TST").unwrap().symbol,
-            "TST"
-        );
+        assert_eq!(db2.current_gamma_exposure("TST").unwrap().symbol, "TST");
         assert_eq!(db2.current_option_info("TST").unwrap().symbol, "TST");
     }
 }
