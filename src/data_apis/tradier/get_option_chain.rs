@@ -1,32 +1,14 @@
-use std::{convert::TryFrom, path::Path, str::FromStr};
+use std::{
+    convert::{TryFrom, TryInto},
+    str::FromStr,
+};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use crate::types;
 
-const DATA_PATH: &str = "data";
-
-pub async fn get_option_chain(
-    symbol: &str,
-    force_download: bool,
-) -> anyhow::Result<Vec<OptionInfo>> {
-    let file_date = Utc::now().format("%Y%m%d").to_string();
-    let file_path = format!("{}/{}_{}.json", DATA_PATH, symbol, file_date);
-    let data_path = Path::new(&file_path);
-
-    if data_path.exists() && !force_download {
-        log::info!("Fetching cached data for {}", symbol);
-
-        let json = std::fs::read_to_string(&data_path)?;
-        Ok(serde_json::from_str(&json)?)
-    } else {
-        log::info!("Downloading today's data for {}", symbol);
-        download_data(symbol, data_path).await
-    }
-}
-
-async fn download_data(symbol: &str, data_path: &Path) -> anyhow::Result<Vec<OptionInfo>> {
+pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<types::OptionInfo>> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
 
     let expirations = super::get_option_expirations(symbol).await?;
@@ -51,15 +33,14 @@ async fn download_data(symbol: &str, data_path: &Path) -> anyhow::Result<Vec<Opt
         result.extend(response.options.option);
     }
 
-    let cache_data = serde_json::to_string_pretty(&result)?;
-    std::fs::create_dir_all(DATA_PATH)?;
-    std::fs::write(&data_path, &cache_data)?;
+    let result: anyhow::Result<Vec<types::OptionInfo>> =
+        result.into_iter().map(TryInto::try_into).collect();
 
-    Ok(result)
+    Ok(result?)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct OptionInfo {
+struct OptionInfo {
     pub symbol: String,
     pub description: String,
     pub exch: String,
@@ -147,6 +128,7 @@ impl TryFrom<OptionInfo> for types::OptionInfo {
             vega: info.greeks.as_ref().map(|g| g.vega),
             rho: info.greeks.as_ref().map(|g| g.rho),
             bid_iv: info.greeks.as_ref().map(|g| g.bid_iv),
+            mid_iv: info.greeks.as_ref().map(|g| g.mid_iv),
             ask_iv: info.greeks.as_ref().map(|g| g.ask_iv),
             smv_vol: info.greeks.as_ref().map(|g| g.smv_vol),
         })

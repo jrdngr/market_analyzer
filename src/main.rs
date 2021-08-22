@@ -7,11 +7,14 @@ pub mod types;
 pub mod utils;
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use std::convert::Infallible;
+use std::{convert::Infallible, sync::Arc};
+use tokio::sync::Mutex;
 use warp::{
     http::{Response, StatusCode},
     Filter, Rejection,
 };
+
+use crate::db::FileDb;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -24,12 +27,22 @@ async fn main() -> anyhow::Result<()> {
 
     let frontend = warp::fs::dir("frontend/public");
 
-    let graphql_filter = warp::path("graphql").and(async_graphql_warp::graphql(graphql::schema()).and_then(
-        |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
-            let resp = schema.execute(request).await;
-            Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
-        },
-    ));
+    let db = match FileDb::load() {
+        Ok(db) => db,
+        Err(_) => FileDb::default(),
+    };
+    let db = Arc::new(Mutex::new(db));
+
+    db::start_db_update_loop(db.clone())?;
+
+    let graphql_filter = warp::path("graphql").and(
+        async_graphql_warp::graphql(graphql::schema(db.clone())).and_then(
+            |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
+                let resp = schema.execute(request).await;
+                Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
+            },
+        ),
+    );
 
     let graphql_playground = warp::path("playground").and(warp::get()).map(|| {
         Response::builder()
