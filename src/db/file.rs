@@ -50,10 +50,9 @@ impl FileDb {
     }
 
     pub fn add_option_info(&mut self, symbol: &str, data: Vec<OptionInfo>) {
-        let entry = self
-            .options
-            .entry(symbol.to_string())
-            .or_insert_with(Vec::new);
+        let symbol = symbol.to_uppercase();
+
+        let entry = self.options.entry(symbol).or_insert_with(Vec::new);
 
         entry.push(data);
         if let Err(e) = self.write() {
@@ -62,11 +61,15 @@ impl FileDb {
     }
 
     pub fn has_symbol(&self, symbol: &str) -> bool {
-        self.options.contains_key(symbol)
+        let symbol = symbol.to_uppercase();
+
+        self.options.contains_key(&symbol)
     }
 
     pub fn option_chain(&self, symbol: &str) -> Option<&Vec<OptionInfo>> {
-        self.options.get(symbol).map(|v| v.last()).flatten()
+        let symbol = symbol.to_uppercase();
+
+        self.options.get(&symbol).map(|v| v.last()).flatten()
     }
 
     pub fn symbols(&self) -> Vec<String> {
