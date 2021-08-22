@@ -44,7 +44,11 @@ async fn main() -> anyhow::Result<()> {
 
     let routes = frontend.or(graphql_playground).or(graphql_filter);
 
-    warp::serve(routes.recover(handle_rejection).with(cors))
+    // If using something like `pretty_env_logger`,
+    // view logs by setting `RUST_LOG=example::api`.
+    let log = warp::log("ma::api");
+
+    warp::serve(routes.recover(handle_rejection).with(log).with(cors))
         .run(([127, 0, 0, 1], 3030))
         .await;
 
