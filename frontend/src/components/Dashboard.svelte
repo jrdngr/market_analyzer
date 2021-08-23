@@ -8,18 +8,18 @@
 <main style="--main-width: {width}%">
     <div class="row">
         <div class="map">
-            <GammaMap symbol="QQQ"/>
+            <GammaMap symbol="SPY"/>
         </div>
         <div class="map">
-            <GammaMap symbol="SPY"/>
+            <GammaMap symbol="SPX"/>
         </div>
     </div>
     <div class="row">
         <div class="map">
-            <GammaMap symbol="NDX"/>
+            <GammaMap symbol="QQQ"/>
         </div>
         <div class="map">
-            <GammaMap symbol="SPX"/>
+            <GammaMap symbol="NDX"/>
         </div>
     </div>
     <div class="controls">
