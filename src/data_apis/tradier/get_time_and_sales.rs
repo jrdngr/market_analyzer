@@ -1,4 +1,4 @@
-use chrono::{Datelike, Duration, Local};
+use chrono::{Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::types::{self as graphql, OhlcInterval};
@@ -7,12 +7,14 @@ pub async fn get_time_and_sales(
     symbol: &str,
     interval: OhlcInterval,
 ) -> anyhow::Result<Vec<TimeAndSales>> {
-    let lookback_days = match Local::now().weekday() {
-        chrono::Weekday::Sun => 4,
-        chrono::Weekday::Sat => 3,
-        _ => 2,
+    let now = Utc::now() - Duration::hours(4);
+
+    let lookback_days = match now.weekday() {
+        chrono::Weekday::Sun => 5,
+        chrono::Weekday::Sat => 4,
+        _ => 3,
     };
-    let start = (Local::now() - Duration::days(lookback_days))
+    let start = (now - Duration::days(lookback_days))
         .format("%Y-%m-%d %H:%M")
         .to_string();
 
@@ -36,7 +38,7 @@ pub async fn get_time_and_sales(
         e
     })?;
 
-    Ok(time_and_sales.series.data)
+    Ok(time_and_sales.series.unwrap_or_default().data)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -54,10 +56,10 @@ pub struct TimeAndSales {
 
 #[derive(Clone, Debug, Deserialize)]
 struct TimeAndSalesResponse {
-    series: TimeAndSalesInner,
+    series: Option<TimeAndSalesInner>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Default, Debug, Deserialize)]
 struct TimeAndSalesInner {
     data: Vec<TimeAndSales>,
 }

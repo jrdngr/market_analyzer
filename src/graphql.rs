@@ -22,6 +22,7 @@ pub struct Root;
 #[Object]
 impl Root {
     async fn quote(&self, symbol: String) -> anyhow::Result<Quote> {
+        log::info!("Querying quote");
         let quote = tradier::get_quote(&symbol).await.map_err(log_error)?;
         Ok(quote.into())
     }
@@ -31,6 +32,7 @@ impl Root {
         symbol: String,
         #[graphql(default_with = "default_interval()")] interval: OhlcInterval,
     ) -> anyhow::Result<Vec<Ohlc>> {
+        log::info!("Querying ohlc");
         let ohlc = tradier::get_time_and_sales(&symbol, interval)
             .await
             .map_err(log_error)?;
@@ -43,6 +45,7 @@ impl Root {
         context: &Context<'_>,
         symbol: String,
     ) -> anyhow::Result<GammaExposureStats> {
+        log::info!("Querying gamma exposure");
         let db = context
             .data::<Arc<Mutex<FileDb>>>()
             .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
@@ -58,6 +61,7 @@ impl Root {
         context: &Context<'_>,
         symbol: String,
     ) -> anyhow::Result<GammaExposureStats> {
+        log::info!("Querying gamma exposure aggregate");
         let db = context
             .data::<Arc<Mutex<FileDb>>>()
             .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
