@@ -22,7 +22,7 @@ pub struct Root;
 #[Object]
 impl Root {
     async fn quote(&self, symbol: String) -> anyhow::Result<Quote> {
-        let quote = tradier::get_quote(&symbol).await?;
+        let quote = tradier::get_quote(&symbol).await.map_err(log_error)?;
         Ok(quote.into())
     }
 
@@ -31,7 +31,9 @@ impl Root {
         symbol: String,
         #[graphql(default_with = "default_interval()")] interval: OhlcInterval,
     ) -> anyhow::Result<Vec<Ohlc>> {
-        let ohlc = tradier::get_time_and_sales(&symbol, interval).await?;
+        let ohlc = tradier::get_time_and_sales(&symbol, interval)
+            .await
+            .map_err(log_error)?;
         let result = ohlc.into_iter().map(|ts| (interval, ts).into()).collect();
         Ok(result)
     }
@@ -44,7 +46,9 @@ impl Root {
         let db = context
             .data::<Arc<Mutex<FileDb>>>()
             .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
-        let option_chain = db::option_chain(&symbol, db.clone()).await?;
+        let option_chain = db::option_chain(&symbol, db.clone())
+            .await
+            .map_err(log_error)?;
         let gex = gamma_exposure(&symbol, &option_chain).unwrap();
         Ok(gex)
     }
@@ -57,7 +61,9 @@ impl Root {
         let db = context
             .data::<Arc<Mutex<FileDb>>>()
             .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
-        let option_chain = db::option_chain(&symbol, db.clone()).await?;
+        let option_chain = db::option_chain(&symbol, db.clone())
+            .await
+            .map_err(log_error)?;
         let gex_agg = gamma_exposure_aggregate(&symbol, &option_chain).unwrap();
         Ok(gex_agg)
     }
@@ -65,4 +71,9 @@ impl Root {
 
 fn default_interval() -> OhlcInterval {
     OhlcInterval::FiveMinute
+}
+
+fn log_error(error: anyhow::Error) -> anyhow::Error {
+    log::error!("{}", error);
+    error
 }

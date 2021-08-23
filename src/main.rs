@@ -56,7 +56,10 @@ async fn main() -> anyhow::Result<()> {
         .allow_methods(vec!["GET", "POST", "PUT", "OPTIONS"])
         .allow_header("content-type");
 
-    let routes = frontend.or(db_download).or(graphql_playground).or(graphql_filter);
+    let routes = frontend
+        .or(db_download)
+        .or(graphql_playground)
+        .or(graphql_filter);
 
     // If using something like `pretty_env_logger`,
     // view logs by setting `RUST_LOG=example::api`.
