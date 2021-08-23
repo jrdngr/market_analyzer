@@ -71,6 +71,15 @@ impl Root {
         let gex_agg = gamma_exposure_aggregate(&symbol, &option_chain).unwrap();
         Ok(gex_agg)
     }
+
+    async fn symbols(&self, context: &Context<'_>) -> anyhow::Result<Vec<String>> {
+        log::info!("Querying gamma exposure aggregate");
+        let db = context
+            .data::<Arc<Mutex<FileDb>>>()
+            .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
+        let db = db.lock().await;
+        Ok(db.symbols())
+    }
 }
 
 fn default_interval() -> OhlcInterval {
