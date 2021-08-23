@@ -2,24 +2,24 @@
     import { Link } from "svelte-routing";
     import GammaMap from './GammaMap.svelte';
 
-    let width = 100;
+    let width = 80;
 </script>
 
 <main style="--main-width: {width}%">
     <div class="row">
         <div class="map">
-            <GammaMap symbol="SPY"/>
+            <GammaMap symbol="QQQ"/>
         </div>
         <div class="map">
-            <GammaMap symbol="SPX"/>
+            <GammaMap symbol="SPY"/>
         </div>
     </div>
     <div class="row">
         <div class="map">
-            <GammaMap symbol="QQQ"/>
+            <GammaMap symbol="NDX"/>
         </div>
         <div class="map">
-            <GammaMap symbol="NDX"/>
+            <GammaMap symbol="SPX"/>
         </div>
     </div>
     <div class="controls">
