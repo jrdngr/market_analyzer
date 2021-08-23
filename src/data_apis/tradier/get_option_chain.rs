@@ -29,7 +29,11 @@ pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<types::OptionI
             .text()
             .await?;
 
-        let response = serde_json::from_str::<OptionChainResponse>(&body)?;
+        let response = serde_json::from_str::<OptionChainResponse>(&body).map_err(|e| {
+            log::error!("{}", e);
+            log::error!("{}", &body);
+            e
+        })?;
         result.extend(response.options.option);
     }
 

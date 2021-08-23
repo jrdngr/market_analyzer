@@ -15,7 +15,11 @@ pub async fn get_option_expirations(symbol: &str) -> anyhow::Result<Vec<String>>
         .text()
         .await?;
 
-    let expirations: ExpirationResponse = serde_json::from_str(&body)?;
+    let expirations: ExpirationResponse = serde_json::from_str(&body).map_err(|e| {
+        log::error!("{}", e);
+        log::error!("{}", &body);
+        e
+    })?;
 
     Ok(expirations
         .expirations

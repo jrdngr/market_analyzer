@@ -30,7 +30,11 @@ pub async fn get_time_and_sales(
         .text()
         .await?;
 
-    let time_and_sales: TimeAndSalesResponse = serde_json::from_str(&body)?;
+    let time_and_sales: TimeAndSalesResponse = serde_json::from_str(&body).map_err(|e| {
+        log::error!("{}", e);
+        log::error!("{}", &body);
+        e
+    })?;
 
     Ok(time_and_sales.series.data)
 }

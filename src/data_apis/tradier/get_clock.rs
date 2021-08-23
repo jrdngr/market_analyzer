@@ -17,7 +17,11 @@ pub async fn get_clock() -> anyhow::Result<types::Clock> {
         .text()
         .await?;
 
-    let clock: ClockResponse = serde_json::from_str(&body)?;
+    let clock: ClockResponse = serde_json::from_str(&body).map_err(|e| {
+        log::error!("{}", e);
+        log::error!("{}", &body);
+        e
+    })?;
 
     Ok(clock.clock.try_into()?)
 }

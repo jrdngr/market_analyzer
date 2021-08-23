@@ -16,7 +16,11 @@ pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
         .text()
         .await?;
 
-    let quotes: QuoteResponse = serde_json::from_str(&body)?;
+    let quotes: QuoteResponse = serde_json::from_str(&body).map_err(|e| {
+        log::error!("{}", e);
+        log::error!("{}", &body);
+        e
+    })?;
 
     Ok(quotes.quotes.quote)
 }
