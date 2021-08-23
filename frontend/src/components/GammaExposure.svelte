@@ -78,7 +78,7 @@
 <main>
     <div class="header">
         <h3>{symbol}</h3>
-        <button on:click={toggleControls}>{showControls ? "Hide Controls" : "Show Controls"}</button>
+        <button on:click={toggleControls}>{showControls ? "-" : "+"}</button>
     </div>
     {#if showControls}
     <div class="controls">
