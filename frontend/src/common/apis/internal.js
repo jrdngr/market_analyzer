@@ -16,6 +16,22 @@ export async function getGammaExposure(symbol) {
     }`, { symbol })).gammaExposure;
 }
 
+export async function getGammaExposureAggregate(symbol) {
+    return (await graphql_request(`query GammaExposureAggregate($symbol: String!) {
+        gammaExposureAggregate(symbol: $symbol) {
+            prices {
+                strike,
+                gammaExposure,
+            }
+            maximumGammaExposure,
+            minimumGammaExposure,
+            absoluteMaximum,
+            weightedAverageAbsolutePrice,
+            absoluteMinimumPrice,
+        }
+    }`, { symbol })).gammaExposure;
+}
+
 export async function getQuote(symbol) {
     return (await graphql_request(`query Quote($symbol: String!){
         quote(symbol: $symbol) {

@@ -1,10 +1,10 @@
 <script>
     import { onMount } from 'svelte';
     import GammaExposureChart from './charts/GammaExposureChart.svelte'
-    import { getGammaExposure, getQuote } from '../common/apis/internal';
+    import { getGammaExposure, getGammaExposureAggregate, getQuote } from '../common/apis/internal';
 
-    export let symbol = null;
     export let options = {
+        symbol: null,
         aggregate: false,
         fresh: false,
     };
@@ -19,9 +19,14 @@
 
 	onMount(async () => {
         console.log("Fetching data");
-        let gexData = await getGammaExposure(symbol, options);
+        let gexData;
+        if (options.aggregate) {
+            gexData = await getGammaExposureAggregate(options.symbol, options);
+        } else {
+            gexData = await getGammaExposure(options.symbol, options);
+        }
 
-        const quote = await getQuote(symbol);
+        const quote = await getQuote(options.symbol);
         gexData.quote = quote;
 
         data = gexData;
@@ -77,7 +82,7 @@
 
 <main>
     <div class="header">
-        <h3>{symbol}</h3>
+        <h3>{options.symbol}</h3>
         <button on:click={toggleControls}>{showControls ? "-" : "+"}</button>
     </div>
     {#if showControls}
