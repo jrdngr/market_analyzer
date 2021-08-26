@@ -5,17 +5,26 @@
 
     export let options = {
         symbol: null,
+        startStrike: 0,
+        endStrike: 1,
         aggregate: false,
         fresh: false,
     };
+
+    if (!options.startStrike) {
+        options.startStrike = 0;
+    }
+    if (!options.endStrike) {
+        options.endStrike = 1;
+    }
 
     let data = null;
     let reducedData = null;
 
     let showControls = false;
 
-    let minPriceIndex = 0;
-    let maxPriceIndex = 1;
+    let minPriceIndex = options.startStrike;
+    let maxPriceIndex = options.endStrike;
     let strikes = [0, 1];
     let brightness = 3;
     let highlightStrikes = true;

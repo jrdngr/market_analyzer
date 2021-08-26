@@ -2,26 +2,44 @@
     import { Link } from "svelte-routing";
     import GammaMap from './GammaMap.svelte';
 
+    const DASHBOARD_ROWS_KEY = "dashboardRows";
+
     let width = 80;
 
-    let chartRows = [
-        [
-            {
-                symbol: "SPY",
-            },
-            {
-                symbol: "SPX",
-            },
-        ],
-        [
-            {
-                symbol: "QQQ",
-            },
-            {
-                symbol: "NDX",
-            }
-        ]
-    ];
+    let chartRows = loadRows();
+    saveRows();
+
+    function saveRows() {
+        localStorage.setItem(DASHBOARD_ROWS_KEY, JSON.stringify(chartRows));
+    }
+
+    function loadRows() {
+        let rowString = localStorage.getItem(DASHBOARD_ROWS_KEY) || "[[{symbol: \"SPY\",},{symbol:\"SPX\",},],[{symbol:\"QQQ\",},{symbol:\"NDX\",}]]"
+
+        try {
+            return JSON.parse(rowString);
+        } catch {
+            localStorage.removeItem(DASHBOARD_ROWS_KEY);
+            return [
+                [
+                    {
+                        symbol: "SPY",
+                    },
+                    {
+                        symbol: "SPX",
+                    },
+                ],
+                [
+                    {
+                        symbol: "QQQ",
+                    },
+                    {
+                        symbol: "NDX",
+                    }
+                ],
+            ];
+        }
+    }
 
 </script>
 
