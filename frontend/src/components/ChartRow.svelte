@@ -4,7 +4,7 @@
 
     const LAST_SEARCHED_KEY = "lastSearchedSymbol";
 
-    let symbol = localStorage.getItem(LAST_SEARCHED_KEY) || "SPY";
+    let searchSymbol = localStorage.getItem(LAST_SEARCHED_KEY) || "SPY";
     let aggregate = false;
     let fresh = false;
 
@@ -25,8 +25,8 @@
         const chart = {
             id: chartId,
             type,
-            symbol,
             options: {
+                symbol: searchSymbol,
                 aggregate,
                 fresh,
             }
@@ -37,7 +37,7 @@
     }
 
     function storeLastSearched() {
-        localStorage.setItem(LAST_SEARCHED_KEY, symbol);
+        localStorage.setItem(LAST_SEARCHED_KEY, searchSymbol);
     }
     
     function deleteChart(id) {
@@ -51,7 +51,7 @@
 </script>
 
 Symbol:
-<input bind:value={symbol}>
+<input bind:value={searchSymbol}>
 <input type=checkbox bind:checked={aggregate}> Aggregate
 <input type=checkbox bind:checked={fresh}> Fresh
 <button on:click={addGammaMap}>
@@ -65,9 +65,9 @@ Symbol:
 {#each charts as chart}
     <div class="chart">
         {#if chart.type === "exposure"}
-            <GammaExposure bind:symbol={chart.symbol} bind:options={chart.options}/>
+            <GammaExposure bind:options={chart.options}/>
         {:else if chart.type === "map"}
-            <GammaMap bind:symbol={chart.symbol} bind:options={chart.options}/>
+            <GammaMap bind:options={chart.options}/>
         {/if}
         <button on:click={deleteChart(chart.id)}>Delete</button>
     </div>

@@ -3,8 +3,8 @@
     import GammaMapChart from './charts/GammaMapChart.svelte'
     import { getGammaExposure, getOhlc, getQuote } from '../common/apis/internal';
 
-    export let symbol = null;
     export let options = {
+        symbol: null,
         aggregate: false,
         fresh: false,
     };
@@ -48,15 +48,15 @@
         startDate = startDate.toJSON().slice(0, -8);
         endDate = endDate.toJSON().slice(0, -8);
 
-        let gexData = await getGammaExposure(symbol, options);
+        let gexData = await getGammaExposure(options.symbol, options);
         
         strikes = gexData.prices.map(p => Number(p.strike));
         strikes.sort((a, b) => a - b);
 
-        const quote = await getQuote(symbol);
+        const quote = await getQuote(options.symbol);
         gexData.quote = quote;
 
-        const ohlc = await getOhlc(symbol, "5min");
+        const ohlc = await getOhlc(options.symbol, "5min");
         gexData.ohlc = ohlc;
 
         data = gexData;
@@ -83,15 +83,15 @@
         }, 30_000);
 
         setInterval(async () => {
-            const ohlc = await getOhlc(symbol, "5min");
+            const ohlc = await getOhlc(options.symbol, "5min");
             data.ohlc = ohlc;
             setData();
         }, 5 * 60_000);
 
         setInterval(async () => {
-            let gexData = await getGammaExposure(symbol, options);
+            let gexData = await getGammaExposure(options.symbol, options);
             gexData.quote = await getQuote(data.quote.symbol);
-            gexData.ohlc = await getOhlc(symbol, "5min");
+            gexData.ohlc = await getOhlc(options.symbol, "5min");
             data = gexData;
             
             setData();
@@ -121,7 +121,7 @@
 
 <main>
     <div class="header">
-        <h3>{symbol}</h3>
+        <h3>{options.symbol}</h3>
         <button on:click={toggleControls}>{showControls ? "-" : "+"}</button>
     </div>
     {#if showControls}
