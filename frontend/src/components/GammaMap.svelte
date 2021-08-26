@@ -126,8 +126,8 @@
     </div>
     {#if showControls}
     <div class="controls">
-        <input type="range" min="0" max={maxPriceIndex - 1} step=1 bind:value={minPriceIndex} on:input={setData}>
-        <input type="range" min={minPriceIndex + 1} max={strikes.length - 1} step=1 bind:value={maxPriceIndex} on:input={setData}>
+        <span class="strike-label">{strikes[minPriceIndex]}</span><input type="range" min="0" max={maxPriceIndex - 1} step=1 bind:value={minPriceIndex} on:input={setData}>
+        <input type="range" min={minPriceIndex + 1} max={strikes.length - 1} step=1 bind:value={maxPriceIndex} on:input={setData}><span class="strike-label">{strikes[maxPriceIndex]}</span>
     </div>
     <div class="controls">
         Start date: <input type=datetime-local bind:value={startDate} on:change={setData}>
@@ -182,6 +182,10 @@
     }
 
     .controls input[type=range] {
-        width: 49%;
+        width: 45%;
+    }
+
+    .strike-label {
+        font-size: 0.75em;
     }
 </style>
