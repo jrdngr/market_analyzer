@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
     let graphql_playground = warp::path("playground").and(warp::get()).map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body(playground_source(GraphQLPlaygroundConfig::new("/")))
+            .body(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
     });
 
     let cors = warp::cors()

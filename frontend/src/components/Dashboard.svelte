@@ -40,7 +40,6 @@
             ];
         }
     }
-
 </script>
 
 <main style="--main-width: {width}%">

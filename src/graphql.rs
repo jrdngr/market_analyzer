@@ -1,10 +1,13 @@
 use std::sync::Arc;
 
 use crate::{
-    analysis::gamma_exposure::{gamma_exposure, gamma_exposure_aggregate},
+    analysis::{
+        gamma_exposure::{gamma_exposure, gamma_exposure_aggregate},
+        option_stats::option_stats,
+    },
     data_apis::tradier,
     db::{self, FileDb},
-    types::{GammaExposureStats, Ohlc, OhlcInterval, Quote},
+    types::{stats::StrikeStats, GammaExposureStats, Ohlc, OhlcInterval, Quote},
 };
 use async_graphql::{Context, EmptyMutation, EmptySubscription, Object};
 use tokio::sync::Mutex;
@@ -40,6 +43,31 @@ impl Root {
         Ok(result)
     }
 
+    async fn symbols(&self, context: &Context<'_>) -> anyhow::Result<Vec<String>> {
+        log::info!("Querying symbols");
+        let db = context
+            .data::<Arc<Mutex<FileDb>>>()
+            .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
+        let db = db.lock().await;
+        Ok(db.symbols())
+    }
+
+    async fn option_stats(
+        &self,
+        context: &Context<'_>,
+        symbol: String,
+    ) -> anyhow::Result<Vec<StrikeStats>> {
+        log::info!("Querying option stats");
+        let db = context
+            .data::<Arc<Mutex<FileDb>>>()
+            .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
+        let option_chain = db::option_chain(&symbol, db.clone())
+            .await
+            .map_err(log_error)?;
+        let stats = option_stats(&option_chain);
+        Ok(stats)
+    }
+
     async fn gamma_exposure(
         &self,
         context: &Context<'_>,
@@ -70,15 +98,6 @@ impl Root {
             .map_err(log_error)?;
         let gex_agg = gamma_exposure_aggregate(&symbol, &option_chain).unwrap();
         Ok(gex_agg)
-    }
-
-    async fn symbols(&self, context: &Context<'_>) -> anyhow::Result<Vec<String>> {
-        log::info!("Querying gamma exposure aggregate");
-        let db = context
-            .data::<Arc<Mutex<FileDb>>>()
-            .map_err(|_| anyhow::anyhow!("Failed to load db"))?;
-        let db = db.lock().await;
-        Ok(db.symbols())
     }
 }
 
