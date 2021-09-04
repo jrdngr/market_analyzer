@@ -111,6 +111,28 @@ pub fn vega(
     (current_price * standard_normal_probability_density(d1) * t.sqrt()) / 100.0
 }
 
+pub fn vanna(
+    sigma: f64,
+    expiration_time: f64,
+    current_time: f64,
+    current_price: f64,
+    strike: f64,
+) -> f64 {
+    let d1 = d1(sigma, expiration_time, current_time, current_price, strike);
+    let d2 = d2(d1, sigma, expiration_time, current_time);
+    (-1.0 * standard_normal_probability_density(d1) * (d2 / sigma)) / 100.0
+}
+
+pub fn charm(
+    sigma: f64,
+    expiration_time: f64,
+    current_time: f64,
+    current_price: f64,
+    strike: f64,
+) -> f64 {
+    0.0
+}
+
 fn d1(sigma: f64, expiration_time: f64, current_time: f64, current_price: f64, strike: f64) -> f64 {
     let t = expiration_time - current_time;
     ((current_price / strike).ln() + (R + (sigma.powi(2) / 2.0)) * t) / (sigma * t.sqrt())
@@ -125,53 +147,68 @@ fn d2(d1: f64, sigma: f64, expiration_time: f64, current_time: f64) -> f64 {
 mod tests {
     use super::*;
 
+    const ROUNDING_DIGITS: i32 = 3;
     const FLOAT_ERROR: f64 = 0.0001;
     const EXPIRATION: f64 = 180.0 / 365.0;
 
     #[test]
     fn test_call_price() {
-        let price = call_price(0.5, EXPIRATION, 0.0, 10.0, 9.0);
-        assert_float_eq(price, 1.8824);
+        assert_float_eq(1.8824, call_price(0.5, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     #[test]
     fn test_put_price() {
-        let price = put_price(0.5, EXPIRATION, 0.0, 10.0, 9.0);
-        assert_float_eq(price, 0.8824);
+        assert_float_eq(0.8824, put_price(0.5, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     #[test]
     fn test_call_delta() {
-        let delta = call_delta(0.5, EXPIRATION, 0.0, 10.0, 9.0);
-        assert_float_eq(delta, 0.6828);
+        assert_float_eq(0.6828, call_delta(0.5, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     #[test]
     fn test_put_delta() {
-        let delta = put_delta(0.5, EXPIRATION, 0.0, 10.0, 9.0);
-        assert_float_eq(delta, -0.3172);
+        assert_float_eq(-0.3172, put_delta(0.5, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     #[test]
     fn test_gamma() {
-        let gamma = gamma(0.5, EXPIRATION, 0.0, 10.0, 9.0);
-        assert_float_eq(gamma, 0.1015);
+        assert_float_eq(0.1015, gamma(0.5, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     #[test]
     fn test_theta() {
-        let theta = theta(0.5, EXPIRATION, 0.0, 10.0, 9.0);
-        assert_float_eq(theta, -0.0035);
+        assert_float_eq(-0.0035, theta(0.5, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     #[test]
     fn test_vega() {
-        let vega = vega(0.5, EXPIRATION, 0.0, 10.0, 9.0);
-        assert_float_eq(vega, 0.0250);
+        assert_float_eq(0.0250, vega(0.5, EXPIRATION, 0.0, 10.0, 9.0));
+    }
+
+    #[test]
+    fn test_vanna() {
+        assert_rounded_float(-0.018, vanna(0.1, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_rounded_float(-0.001, vanna(0.5, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_rounded_float(0.001, vanna(1.0, EXPIRATION, 0.0, 10.0, 9.0));
+    }
+
+    #[test]
+    fn test_charm() {
+        assert_float_eq(0.0, charm(0.1, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_float_eq(0.0, charm(0.5, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_float_eq(0.0, charm(1.0, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     fn assert_float_eq(actual: f64, expected: f64) {
         let diff = actual - expected;
         assert!(diff.abs() < FLOAT_ERROR, "{} != {}", actual, expected);
+    }
+
+    fn assert_rounded_float(actual: f64, expected: f64) {
+        let multiplier = 10.0_f64.powi(ROUNDING_DIGITS);
+        let a = (actual * multiplier).round() / multiplier;
+        let b = (expected * multiplier).round() / multiplier;
+        assert_eq!(a, b);
     }
 }
