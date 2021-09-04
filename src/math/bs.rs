@@ -79,7 +79,6 @@ pub fn gamma(
     standard_normal_probability_density(d1) / (current_price * sigma * t.sqrt())
 }
 
-/// Broken
 pub fn theta(
     sigma: f64,
     expiration_time: f64,
@@ -96,10 +95,9 @@ pub fn theta(
     let a = (current_price * standard_normal_probability_density(d1) * sigma) / (2.0 * t.sqrt());
     let b = R * strike * E.powf(-R * t) * standard_normal_cdf(d2);
 
-    -a - b
+    (-a - b) / 365.0
 }
 
-/// Broken
 pub fn vega(
     sigma: f64,
     expiration_time: f64,
@@ -109,7 +107,8 @@ pub fn vega(
 ) -> f64 {
     let d1 = d1(sigma, expiration_time, current_time, current_price, strike);
     let t = expiration_time - current_time;
-    current_price * standard_normal_probability_density(d1) * t.sqrt()
+
+    (current_price * standard_normal_probability_density(d1) * t.sqrt()) / 100.0
 }
 
 fn d1(sigma: f64, expiration_time: f64, current_time: f64, current_price: f64, strike: f64) -> f64 {
@@ -160,14 +159,12 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_theta() {
         let theta = theta(0.5, EXPIRATION, 0.0, 10.0, 9.0);
         assert_float_eq(theta, -0.0035);
     }
 
     #[test]
-    #[ignore]
     fn test_vega() {
         let vega = vega(0.5, EXPIRATION, 0.0, 10.0, 9.0);
         assert_float_eq(vega, 0.0250);
