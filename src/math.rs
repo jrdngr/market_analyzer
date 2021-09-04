@@ -3,7 +3,7 @@ pub mod bs;
 use statrs::distribution::{ContinuousCDF, Normal};
 
 pub fn standard_normal_cdf(x: f64) -> f64 {
-    let n = Normal::new(0.0, 1.0).unwrap();
+    let n = Normal::new(0.0, 1.0).expect("0.0 and 1.0 are valid");
     n.cdf(x)
 }
 

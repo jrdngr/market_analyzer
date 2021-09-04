@@ -108,20 +108,18 @@ pub fn gamma_exposure_by_price(option_chain: &[OptionInfo]) -> BTreeMap<String, 
 
     for option in option_chain {
         let strike = option.strike.to_string();
-        if let Some(gamma) = option.gamma {
-            let mut exposure = if !(-1.0..=1.0).contains(&gamma) {
-                0.0
-            } else {
-                gamma * option.open_interest as f64
-            };
-            if option.option_type == OptionType::Put {
-                exposure *= -1.0;
-            }
-            match strike_to_gamma_exposure.get_mut(&strike) {
-                Some(exp) => *exp += exposure,
-                None => {
-                    strike_to_gamma_exposure.insert(strike, exposure);
-                }
+        let mut exposure = if !(-1.0..=1.0).contains(&option.gamma()) {
+            0.0
+        } else {
+            option.gamma() * option.open_interest as f64
+        };
+        if option.option_type == OptionType::Put {
+            exposure *= -1.0;
+        }
+        match strike_to_gamma_exposure.get_mut(&strike) {
+            Some(exp) => *exp += exposure,
+            None => {
+                strike_to_gamma_exposure.insert(strike, exposure);
             }
         }
     }

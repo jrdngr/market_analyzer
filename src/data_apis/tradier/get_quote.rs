@@ -54,7 +54,8 @@ pub struct Quote {
     pub asksize: u64,
     pub askexch: Option<String>,
     pub ask_date: u64,
-    pub root_symbols: String,
+    pub root_symbol: Option<String>,
+    pub root_symbols: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

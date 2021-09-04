@@ -9,9 +9,13 @@ pub fn option_stats(option_chain: &[OptionInfo]) -> Vec<StrikeStats> {
 
     for option in option_chain {
         let strike = option.strike.to_string();
-        let gamma = option.open_interest as f64 * option.gamma.unwrap_or_default();
-        let vanna = 0.0;
-        let charm = 0.0;
+        let gamma = option.open_interest as f64 * option.gamma();
+        let vanna = option.open_interest as f64 * option.vanna();
+        let charm = option.open_interest as f64 * option.charm();
+
+        let gamma = if gamma.is_finite() { gamma } else { 0.0 };
+        let vanna = if vanna.is_finite() { vanna } else { 0.0 };
+        let charm = if charm.is_finite() { charm } else { 0.0 };
 
         if let Some(aggregate_stats) = strike_to_stats.get_mut(&strike) {
             aggregate_stats.open_interest += option.open_interest;
@@ -40,6 +44,7 @@ pub fn option_stats(option_chain: &[OptionInfo]) -> Vec<StrikeStats> {
                     charm,
                 },
             };
+
             strike_to_stats.insert(strike, stats);
         }
     }

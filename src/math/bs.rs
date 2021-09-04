@@ -130,7 +130,13 @@ pub fn charm(
     current_price: f64,
     strike: f64,
 ) -> f64 {
-    0.0
+    let t = expiration_time - current_time;
+    let d1 = d1(sigma, expiration_time, current_time, current_price, strike);
+    let d2 = d2(d1, sigma, expiration_time, current_time);
+
+    let numerator = (2.0 * R * t) - (d2 * sigma * t.sqrt());
+    let denominator = 2.0 * t * sigma * t.sqrt();
+    -standard_normal_probability_density(d1) * (numerator / denominator)
 }
 
 fn d1(sigma: f64, expiration_time: f64, current_time: f64, current_price: f64, strike: f64) -> f64 {
@@ -147,7 +153,6 @@ fn d2(d1: f64, sigma: f64, expiration_time: f64, current_time: f64) -> f64 {
 mod tests {
     use super::*;
 
-    const ROUNDING_DIGITS: i32 = 3;
     const FLOAT_ERROR: f64 = 0.0001;
     const EXPIRATION: f64 = 180.0 / 365.0;
 
@@ -188,27 +193,20 @@ mod tests {
 
     #[test]
     fn test_vanna() {
-        assert_rounded_float(-0.018, vanna(0.1, EXPIRATION, 0.0, 10.0, 9.0));
-        assert_rounded_float(-0.001, vanna(0.5, EXPIRATION, 0.0, 10.0, 9.0));
-        assert_rounded_float(0.001, vanna(1.0, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_float_eq(-0.01798, vanna(0.1, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_float_eq(-0.0008871, vanna(0.5, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_float_eq(0.0007075, vanna(1.0, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     #[test]
     fn test_charm() {
-        assert_float_eq(0.0, charm(0.1, EXPIRATION, 0.0, 10.0, 9.0));
-        assert_float_eq(0.0, charm(0.5, EXPIRATION, 0.0, 10.0, 9.0));
-        assert_float_eq(0.0, charm(1.0, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_float_eq(0.1823, charm(0.1, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_float_eq(0.0449, charm(0.5, EXPIRATION, 0.0, 10.0, 9.0));
+        assert_float_eq(-0.0717, charm(1.0, EXPIRATION, 0.0, 10.0, 9.0));
     }
 
     fn assert_float_eq(actual: f64, expected: f64) {
         let diff = actual - expected;
         assert!(diff.abs() < FLOAT_ERROR, "{} != {}", actual, expected);
-    }
-
-    fn assert_rounded_float(actual: f64, expected: f64) {
-        let multiplier = 10.0_f64.powi(ROUNDING_DIGITS);
-        let a = (actual * multiplier).round() / multiplier;
-        let b = (expected * multiplier).round() / multiplier;
-        assert_eq!(a, b);
     }
 }

@@ -8,5 +8,5 @@ pub mod stats;
 pub use clock::Clock;
 pub use gex::{GammaExposure, GammaExposureStats};
 pub use ohlc::{Ohlc, OhlcInterval};
-pub use options::{OptionInfo, OptionType};
+pub use options::{Greeks, OptionInfo, OptionType};
 pub use quote::Quote;

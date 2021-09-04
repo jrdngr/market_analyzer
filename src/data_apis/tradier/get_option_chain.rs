@@ -1,19 +1,18 @@
-use std::{
-    convert::{TryFrom, TryInto},
-    str::FromStr,
-};
+use std::str::FromStr;
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
-use crate::types;
+use crate::{math::bs, types};
 
 pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<types::OptionInfo>> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
 
     let expirations = super::get_option_expirations(symbol).await?;
+    let quote = super::get_quote(symbol).await?;
+    let current_price = quote.last.unwrap_or(0.0);
 
-    let mut result = Vec::new();
+    let mut option_info = Vec::new();
 
     for expiration in expirations {
         let params = format!("symbol={}&expiration={}&greeks=true", symbol, expiration);
@@ -34,13 +33,15 @@ pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<types::OptionI
             log::error!("{}", &body);
             e
         })?;
-        result.extend(response.options.option);
+        option_info.extend(response.options.option);
     }
 
-    let result: anyhow::Result<Vec<types::OptionInfo>> =
-        result.into_iter().map(TryInto::try_into).collect();
+    let mut result = Vec::new();
+    for oi in option_info {
+        result.push(oi.into_crate_type(current_price).await?);
+    }
 
-    Ok(result?)
+    Ok(result)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -108,33 +109,88 @@ struct OptionChainResponseInner {
     option: Vec<OptionInfo>,
 }
 
-impl TryFrom<OptionInfo> for types::OptionInfo {
-    type Error = anyhow::Error;
+impl OptionInfo {
+    pub async fn into_crate_type(self, current_price: f64) -> anyhow::Result<types::OptionInfo> {
+        let option_type = types::OptionType::from_str(&self.option_type)?;
 
-    fn try_from(info: OptionInfo) -> Result<Self, Self::Error> {
-        Ok(Self {
+        let greeks = match &self.greeks {
+            Some(g) => {
+                let expiration_time = 180.0;
+                let current_time = 0.0;
+
+                let delta = match option_type {
+                    types::OptionType::Call => bs::call_delta,
+                    types::OptionType::Put => bs::put_delta,
+                };
+
+                Some(types::Greeks {
+                    delta: delta(
+                        g.mid_iv,
+                        expiration_time,
+                        current_time,
+                        current_price,
+                        self.strike,
+                    ),
+                    gamma: bs::gamma(
+                        g.mid_iv,
+                        expiration_time,
+                        current_time,
+                        current_price,
+                        self.strike,
+                    ),
+                    theta: bs::theta(
+                        g.mid_iv,
+                        expiration_time,
+                        current_time,
+                        current_price,
+                        self.strike,
+                    ),
+                    vega: bs::vega(
+                        g.mid_iv,
+                        expiration_time,
+                        current_time,
+                        current_price,
+                        self.strike,
+                    ),
+                    rho: g.rho,
+                    vanna: bs::vanna(
+                        g.mid_iv,
+                        expiration_time,
+                        current_time,
+                        current_price,
+                        self.strike,
+                    ),
+                    charm: bs::charm(
+                        g.mid_iv,
+                        expiration_time,
+                        current_time,
+                        current_price,
+                        self.strike,
+                    ),
+                })
+            }
+            None => None,
+        };
+
+        Ok(types::OptionInfo {
             timestamp: Utc::now().to_rfc3339(),
-            symbol: info.root_symbol,
-            option_type: types::OptionType::from_str(&info.option_type)?,
-            strike: info.strike,
-            expiration_date: info.expiration_date,
-            open_interest: info.open_interest,
-            last: info.last,
-            change: info.change,
-            volume: info.volume,
-            open: info.open,
-            high: info.high,
-            low: info.low,
-            close: info.close,
-            delta: info.greeks.as_ref().map(|g| g.delta),
-            gamma: info.greeks.as_ref().map(|g| g.gamma),
-            theta: info.greeks.as_ref().map(|g| g.theta),
-            vega: info.greeks.as_ref().map(|g| g.vega),
-            rho: info.greeks.as_ref().map(|g| g.rho),
-            bid_iv: info.greeks.as_ref().map(|g| g.bid_iv),
-            mid_iv: info.greeks.as_ref().map(|g| g.mid_iv),
-            ask_iv: info.greeks.as_ref().map(|g| g.ask_iv),
-            smv_vol: info.greeks.as_ref().map(|g| g.smv_vol),
+            symbol: self.root_symbol,
+            option_type,
+            strike: self.strike,
+            expiration_date: self.expiration_date,
+            open_interest: self.open_interest,
+            last: self.last,
+            change: self.change,
+            volume: self.volume,
+            open: self.open,
+            high: self.high,
+            low: self.low,
+            close: self.close,
+            greeks,
+            bid_iv: self.greeks.as_ref().map(|g| g.bid_iv),
+            mid_iv: self.greeks.as_ref().map(|g| g.mid_iv),
+            ask_iv: self.greeks.as_ref().map(|g| g.ask_iv),
+            smv_vol: self.greeks.as_ref().map(|g| g.smv_vol),
         })
     }
 }
