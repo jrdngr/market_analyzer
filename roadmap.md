@@ -1,4 +1,5 @@
 # Functionality
+* Try $SPX.X with TDA
 * Chart futures data on top of index options
 * Hybrid gamma map. Aggregate background gradient, per-strike lines
 * Market internals summary
