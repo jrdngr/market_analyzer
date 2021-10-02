@@ -120,18 +120,20 @@
         }
 
         /* 
-         * Draw current price
+         * Draw current prices
          */
-        svg.append("g")
+        for (const quote of data.quotes) {
+            svg.append("g")
             .selectAll("rect")
-            .data([data.quote.last])
+            .data([quote.last])
             .join("rect")
             .attr("class", "price")
             .attr("x", margin.left)
             .attr("y", d => yPrice(d) - 0.5)
             .attr("height", 1)
             .attr("width", width)
-            .attr("fill", "yellow");
+            .attr("fill", quote.color);
+        }
 
         /* 
          * Draw price chart

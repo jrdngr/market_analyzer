@@ -2,9 +2,13 @@
     import { onMount } from 'svelte';
     import GammaMapChart from './charts/GammaMapChart.svelte'
     import { getGammaExposure, getOhlc, getQuote } from '../common/apis/internal';
+import { quantileSorted } from 'd3-array';
 
     export let options = {
-        symbol: null,
+        tickers: null,
+        priceLines: null,
+        barTicker: null,
+        title: null,
         startStrike: 0,
         endStrike: 1,
         aggregate: false,
@@ -57,23 +61,20 @@
         startDate = startDate.toJSON().slice(0, -8);
         endDate = endDate.toJSON().slice(0, -8);
 
-        let gexData = await getGammaExposure(options.symbol, options);
-        
+        let gexData = await getGexData();
+
         strikes = gexData.prices.map(p => Number(p.strike));
         strikes.sort((a, b) => a - b);
 
-        const quote = await getQuote(options.symbol);
-        gexData.quote = quote;
-
-        const ohlc = await getOhlc(options.symbol, "5min");
-        gexData.ohlc = ohlc;
+        gexData.quotes = await getQuotes();
+        gexData.ohlc = await getOhlcData();
 
         data = gexData;
 
         if (strikes.length > 1) {
-            const priceOffset = Math.max(1, data.quote.last * 0.0025);
-            const low = data.quote.low - priceOffset;
-            const high = data.quote.high + priceOffset;
+            const priceOffset = Math.max(1, data.quotes[0].last * 0.0025);
+            const low = data.quotes[0].low - priceOffset;
+            const high = data.quotes[0].high + priceOffset;
 
             for (let i = 1; i < strikes.length; i++) {
                 if (low > strikes[i-1] && low <= strikes[i]) {
@@ -86,28 +87,110 @@
         }
 
         setInterval(async () => {
-            const quote = await getQuote(data.quote.symbol);
-            data.quote = quote
+            data.quotes = await getQuotes();
             setData();
         }, 30_000);
 
         setInterval(async () => {
-            const ohlc = await getOhlc(options.symbol, "5min");
+            const ohlc = await getOhlcData();
             data.ohlc = ohlc;
             setData();
         }, 5 * 60_000);
 
         setInterval(async () => {
-            let gexData = await getGammaExposure(options.symbol, options);
-            gexData.quote = await getQuote(data.quote.symbol);
-            gexData.ohlc = await getOhlc(options.symbol, "5min");
+            let gexData = await getGexData();
+            gexData.quotes = await getQuotes();
+            gexData.ohlc = await getOhlcData();
             data = gexData;
-            
+
             setData();
         }, 60 * 60_000);
 
         setData();
     });
+
+    async function getGexData() {
+        let gexData = null;
+        for (const ticker of options.tickers) {
+            let tickerGex = await getGammaExposure(ticker.symbol);
+            if (!gexData) {
+                gexData = tickerGex;
+                if (ticker.multiplier) {
+                    for (let price of gexData.prices) {
+                        let strike = parseFloat(price.strike);
+                        strike *= ticker.multiplier;
+                        price.strike = strike.toString();
+                    }
+                }
+            } else {
+                // Update Strikes
+                for (let price of tickerGex.prices) {
+                    if (ticker.multiplier) {
+                        let strike = parseFloat(price.strike);
+                        strike *= ticker.multiplier;
+                        price.strike = strike.toString();
+                    }
+                    for (const gexPrice of gexData.prices) {
+                        if (price.strike === gexPrice.strike) {
+                            gexPrice.gammaExposure += price.gammaExposure;
+                            price.added = true;
+                        }
+                    }
+                }
+                for (const price of tickerGex.prices) {
+                    if (!price.added) {
+                        gexData.prices.push(price);
+                    }
+                }
+
+                // Update stats
+                if (ticker.multiplier) {
+                    tickerGex.absoluteMinimumPrice *= ticker.multiplier;
+                    tickerGex.weightedAverageAbsolutePrice *= ticker.multiplier;
+                }
+                gexData.absoluteMaximum = Math.max(gexData.absoluteMaximum, tickerGex.absoluteMaximum);
+                gexData.absoluteMinimumPrice = Math.min(gexData.absoluteMinimumPrice, tickerGex.absoluteMinimumPrice);
+                gexData.maximumGammaExposure = Math.max(gexData.maximumGammaExposure, tickerGex.maximumGammaExposure);
+                gexData.minimumGammaExposure = Math.max(gexData.minimumGammaExposure, tickerGex.minimumGammaExposure);
+                gexData.weightedAverageAbsolutePrice = Math.max(gexData.weightedAverageAbsolutePrice, tickerGex.weightedAverageAbsolutePrice);
+            }
+        }
+
+        return gexData;
+    }
+
+    async function getQuotes() {
+        const quotes = [];
+        for (const ticker of options.priceLines) {
+            const quote = await getQuote(ticker.symbol);
+            if (ticker.multiplier) {
+                quote.last *= ticker.multiplier;
+                quote.change *= ticker.multiplier;
+                quote.open *= ticker.multiplier;
+                quote.high *= ticker.multiplier;
+                quote.low *= ticker.multiplier;
+                quote.close *= ticker.multiplier;
+            }
+            quote.color = ticker.color;
+            quotes.push(quote);
+        }
+        return quotes;
+    }
+
+    async function getOhlcData() {
+        let data = await getOhlc(options.barTicker.symbol, "5min");
+        if (options.barTicker.multiplier) {
+            for (const bar of data) {
+                bar.open *= options.barTicker.multiplier;
+                bar.high *= options.barTicker.multiplier;
+                bar.low *= options.barTicker.multiplier;
+                bar.close *= options.barTicker.multiplier;
+                bar.price *= options.barTicker.multiplier;
+                bar.vwap *= options.barTicker.multiplier;
+            }
+        }
+        return data;
+    }
 
     function setData() {
         reducedData = Object.assign({}, data);
@@ -130,7 +213,7 @@
 
 <main>
     <div class="header">
-        <h3>{options.symbol}</h3>
+        <h3>{options.title}</h3>
         <button on:click={toggleControls}>{showControls ? "-" : "+"}</button>
     </div>
     {#if showControls}

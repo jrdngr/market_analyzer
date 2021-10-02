@@ -1,4 +1,5 @@
 <script>
+    import { DEFAULT_ROWS } from '../common/constants';
     import { Link } from "svelte-routing";
     import GammaMap from './GammaMap.svelte';
 
@@ -11,35 +12,19 @@
     saveRows();
 
     function saveRows() {
-        localStorage.setItem(DASHBOARD_ROWS_KEY, JSON.stringify(chartRows));
+        // localStorage.setItem(DASHBOARD_ROWS_KEY, JSON.stringify(chartRows));
     }
 
     function loadRows() {
-        let rowString = localStorage.getItem(DASHBOARD_ROWS_KEY) || "[[{symbol: \"SPY\",},{symbol:\"SPX\",},],[{symbol:\"QQQ\",},{symbol:\"NDX\",}]]"
+        return DEFAULT_ROWS;
+        // let rowString = localStorage.getItem(DASHBOARD_ROWS_KEY) || "[[{symbol: \"SPY\",},{symbol:\"SPX\",},],[{symbol:\"QQQ\",},{symbol:\"NDX\",}]]"
 
-        try {
-            return JSON.parse(rowString);
-        } catch {
-            localStorage.removeItem(DASHBOARD_ROWS_KEY);
-            return [
-                [
-                    {
-                        symbol: "SPY",
-                    },
-                    {
-                        symbol: "SPX",
-                    },
-                ],
-                [
-                    {
-                        symbol: "QQQ",
-                    },
-                    {
-                        symbol: "NDX",
-                    }
-                ],
-            ];
-        }
+        // try {
+        //     return JSON.parse(rowString);
+        // } catch {
+        //     localStorage.removeItem(DASHBOARD_ROWS_KEY);
+        //     return DEFAULT_ROWS;
+        // }
     }
 </script>
 
