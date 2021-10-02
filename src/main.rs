@@ -36,7 +36,7 @@ async fn main() -> anyhow::Result<()> {
 
     db::start_db_update_loop(db.clone())?;
 
-    let graphql_filter = warp::path("graphql").and(
+    let tradier_graphql_filter = warp::path("graphql").and(
         async_graphql_warp::graphql(graphql::schema(db.clone())).and_then(
             |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
                 let resp = schema.execute(request).await;
@@ -45,10 +45,25 @@ async fn main() -> anyhow::Result<()> {
         ),
     );
 
-    let graphql_playground = warp::path("playground").and(warp::get()).map(|| {
+    let tradier_graphql_playground = warp::path("playground").and(warp::get()).map(|| {
         Response::builder()
             .header("content-type", "text/html")
             .body(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
+    });
+
+    let tda_graphql_filter = warp::path("tdagraphql").and(
+        async_graphql_warp::graphql(graphql::tda_schema(db.clone())).and_then(
+            |(schema, request): (graphql::TdaSchema, async_graphql::Request)| async move {
+                let resp = schema.execute(request).await;
+                Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
+            },
+        ),
+    );
+
+    let tda_graphql_playground = warp::path("tdaplayground").and(warp::get()).map(|| {
+        Response::builder()
+            .header("content-type", "text/html")
+            .body(playground_source(GraphQLPlaygroundConfig::new("/tdagraphql")))
     });
 
     let cors = warp::cors()
@@ -56,13 +71,13 @@ async fn main() -> anyhow::Result<()> {
         .allow_methods(vec!["GET", "POST", "PUT", "OPTIONS"])
         .allow_header("content-type");
 
-    let routes = frontend
-        .or(db_download)
-        .or(graphql_playground)
-        .or(graphql_filter);
+    let routes = db_download
+        .or(tradier_graphql_filter)
+        .or(tradier_graphql_playground)
+        .or(tda_graphql_filter)
+        .or(tda_graphql_playground)
+        .or(frontend);
 
-    // If using something like `pretty_env_logger`,
-    // view logs by setting `RUST_LOG=example::api`.
     let log = warp::log("ma::api");
 
     warp::serve(routes.recover(handle_rejection).with(log).with(cors))
