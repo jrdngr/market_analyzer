@@ -1,6 +1,10 @@
+mod get_ohlc;
+mod get_quote;
 mod options;
 
 pub use options::*;
+pub use get_ohlc::get_ohlc;
+pub use get_quote::get_quote;
 
 use std::path::Path;
 
@@ -8,6 +12,7 @@ use chrono::Utc;
 
 const DATA_PATH: &str = "data";
 const API_KEY_ENV: &str = "API_KEY";
+const BASE_URL: &str = "https://api.tdameritrade.com/v1";
 const OPTION_CHAIN_URL: &str = "https://api.tdameritrade.com/v1/marketdata/chains";
 
 pub async fn get_option_chain(symbol: &str, force_download: bool) -> anyhow::Result<OptionChain> {
