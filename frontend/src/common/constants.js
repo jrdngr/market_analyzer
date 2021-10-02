@@ -22,7 +22,7 @@ export const DEFAULT_ROWS = [
                     color: "orange",
                 }
             ],
-            barTicker: {
+            ohlcTicker: {
                 symbol: "SPY",
                 multiplier: 10,
             },
@@ -49,7 +49,7 @@ export const DEFAULT_ROWS = [
                     color: "orange",
                 }
             ],
-            barTicker: {
+            ohlcTicker: {
                 symbol: "QQQ",
                 multiplier: 41,
             },

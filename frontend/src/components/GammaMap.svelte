@@ -7,7 +7,7 @@ import { quantileSorted } from 'd3-array';
     export let options = {
         tickers: null,
         priceLines: null,
-        barTicker: null,
+        ohlcTicker: null,
         title: null,
         startStrike: 0,
         endStrike: 1,
@@ -178,15 +178,15 @@ import { quantileSorted } from 'd3-array';
     }
 
     async function getOhlcData() {
-        let data = await getOhlc(options.barTicker.symbol, "5min");
-        if (options.barTicker.multiplier) {
+        let data = await getOhlc(options.ohlcTicker.symbol, "5min");
+        if (options.ohlcTicker.multiplier) {
             for (const bar of data) {
-                bar.open *= options.barTicker.multiplier;
-                bar.high *= options.barTicker.multiplier;
-                bar.low *= options.barTicker.multiplier;
-                bar.close *= options.barTicker.multiplier;
-                bar.price *= options.barTicker.multiplier;
-                bar.vwap *= options.barTicker.multiplier;
+                bar.open *= options.ohlcTicker.multiplier;
+                bar.high *= options.ohlcTicker.multiplier;
+                bar.low *= options.ohlcTicker.multiplier;
+                bar.close *= options.ohlcTicker.multiplier;
+                bar.price *= options.ohlcTicker.multiplier;
+                bar.vwap *= options.ohlcTicker.multiplier;
             }
         }
         return data;
