@@ -27,7 +27,7 @@ impl Root {
     async fn quote(&self, symbol: String) -> anyhow::Result<Quote> {
         log::info!("Querying quote");
         let quote = tradier::get_quote(&symbol).await.map_err(log_error)?;
-        Ok(quote.into())
+        Ok(quote)
     }
 
     async fn ohlc(
@@ -39,8 +39,7 @@ impl Root {
         let ohlc = tradier::get_time_and_sales(&symbol, interval)
             .await
             .map_err(log_error)?;
-        let result = ohlc.into_iter().map(|ts| (interval, ts).into()).collect();
-        Ok(result)
+        Ok(ohlc)
     }
 
     async fn symbols(&self, context: &Context<'_>) -> anyhow::Result<Vec<String>> {

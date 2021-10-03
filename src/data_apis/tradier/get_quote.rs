@@ -1,7 +1,7 @@
 use crate::types;
 use serde::{Deserialize, Serialize};
 
-pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
+pub async fn get_quote(symbol: &str) -> anyhow::Result<types::Quote> {
     let access_token = std::env::var(super::ACCESS_TOKEN_ENV)?;
     let params = format!("symbols={}", symbol);
     let url = format!("{}/markets/quotes?{}", super::BASE_URL, params);
@@ -22,11 +22,11 @@ pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
         e
     })?;
 
-    Ok(quotes.quotes.quote)
+    Ok(quotes.quotes.quote.into())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Quote {
+pub struct QuoteRaw {
     pub symbol: String,
     pub description: String,
     pub exch: String,
@@ -65,11 +65,11 @@ struct QuoteResponse {
 
 #[derive(Clone, Debug, Deserialize)]
 struct QuoteResponseInner {
-    quote: Quote,
+    quote: QuoteRaw,
 }
 
-impl From<Quote> for types::Quote {
-    fn from(quote: Quote) -> Self {
+impl From<QuoteRaw> for types::Quote {
+    fn from(quote: QuoteRaw) -> Self {
         Self {
             symbol: quote.symbol,
             last: quote.last,

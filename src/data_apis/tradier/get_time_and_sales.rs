@@ -6,7 +6,7 @@ use crate::types::{self as graphql, OhlcInterval};
 pub async fn get_time_and_sales(
     symbol: &str,
     interval: OhlcInterval,
-) -> anyhow::Result<Vec<TimeAndSales>> {
+) -> anyhow::Result<Vec<graphql::Ohlc>> {
     let now = Utc::now() - Duration::hours(4);
 
     let lookback_days = match now.weekday() {
@@ -38,7 +38,9 @@ pub async fn get_time_and_sales(
         e
     })?;
 
-    Ok(time_and_sales.series.unwrap_or_default().data)
+    let data = time_and_sales.series.unwrap_or_default().data;
+    let result = data.into_iter().map(|ts| (interval, ts).into()).collect();
+    Ok(result)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
