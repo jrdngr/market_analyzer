@@ -273,30 +273,32 @@ impl OptionData {
             types::OptionType::Put => bs::put_delta,
         };
 
+        let volatility = self.volatility / 100.0;
+
         let greeks = types::Greeks {
             delta: delta(
-                self.volatility,
+                volatility,
                 expiration_time,
                 current_time,
                 current_price,
                 self.strike_price,
             ),
             gamma: bs::gamma(
-                self.volatility,
+                volatility,
                 expiration_time,
                 current_time,
                 current_price,
                 self.strike_price,
             ),
             theta: bs::theta(
-                self.volatility,
+                volatility,
                 expiration_time,
                 current_time,
                 current_price,
                 self.strike_price,
             ),
             vega: bs::vega(
-                self.volatility,
+                volatility,
                 expiration_time,
                 current_time,
                 current_price,
@@ -304,14 +306,14 @@ impl OptionData {
             ),
             rho: self.rho,
             vanna: bs::vanna(
-                self.volatility,
+                volatility,
                 expiration_time,
                 current_time,
                 current_price,
                 self.strike_price,
             ),
             charm: bs::charm(
-                self.volatility,
+                volatility,
                 expiration_time,
                 current_time,
                 current_price,
@@ -342,7 +344,7 @@ impl OptionData {
             close: Some(self.close_price),
             greeks: Some(greeks),
             bid_iv: None,
-            mid_iv: Some(self.volatility),
+            mid_iv: Some(volatility),
             ask_iv: None,
             smv_vol: None,
         }

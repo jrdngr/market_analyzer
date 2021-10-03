@@ -36,22 +36,7 @@ async fn main() -> anyhow::Result<()> {
 
     db::start_db_update_loop(db.clone())?;
 
-    let tradier_graphql_filter = warp::path("graphql").and(
-        async_graphql_warp::graphql(graphql::schema(db.clone())).and_then(
-            |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
-                let resp = schema.execute(request).await;
-                Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
-            },
-        ),
-    );
-
-    let tradier_graphql_playground = warp::path("playground").and(warp::get()).map(|| {
-        Response::builder()
-            .header("content-type", "text/html")
-            .body(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
-    });
-
-    let tda_graphql_filter = warp::path("tdagraphql").and(
+    let graphql_filter = warp::path("graphql").and(
         async_graphql_warp::graphql(graphql::tda_schema(db.clone())).and_then(
             |(schema, request): (graphql::TdaSchema, async_graphql::Request)| async move {
                 let resp = schema.execute(request).await;
@@ -60,11 +45,11 @@ async fn main() -> anyhow::Result<()> {
         ),
     );
 
-    let tda_graphql_playground = warp::path("tdaplayground").and(warp::get()).map(|| {
+    let graphql_playground = warp::path("playground").and(warp::get()).map(|| {
         Response::builder()
             .header("content-type", "text/html")
             .body(playground_source(GraphQLPlaygroundConfig::new(
-                "/tdagraphql",
+                "/graphql",
             )))
     });
 
@@ -74,10 +59,8 @@ async fn main() -> anyhow::Result<()> {
         .allow_header("content-type");
 
     let routes = db_download
-        .or(tradier_graphql_filter)
-        .or(tradier_graphql_playground)
-        .or(tda_graphql_filter)
-        .or(tda_graphql_playground)
+        .or(graphql_filter)
+        .or(graphql_playground)
         .or(frontend);
 
     let log = warp::log("ma::api");

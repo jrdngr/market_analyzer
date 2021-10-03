@@ -8,7 +8,7 @@ export const DEFAULT_ROWS = [
                     multiplier: 10,
                 }, 
                 {
-                    symbol: "SPX",
+                    symbol: "$SPX.X",
                 },
             ],
             priceLines: [
@@ -18,7 +18,7 @@ export const DEFAULT_ROWS = [
                     color: "yellow",
                 },
                 {
-                    symbol: "SPX",
+                    symbol: "$SPX.X",
                     color: "orange",
                 }
             ],
@@ -35,7 +35,7 @@ export const DEFAULT_ROWS = [
                     multiplier: 41,
                 }, 
                 {
-                    symbol: "NDX",
+                    symbol: "$NDX.X",
                 },
             ],
             priceLines: [
@@ -45,7 +45,7 @@ export const DEFAULT_ROWS = [
                     color: "yellow",
                 },
                 {
-                    symbol: "NDX",
+                    symbol: "$NDX.X",
                     color: "orange",
                 }
             ],

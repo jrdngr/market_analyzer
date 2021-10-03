@@ -10,7 +10,6 @@ export async function getGammaExposure(symbol) {
             maximumGammaExposure,
             minimumGammaExposure,
             absoluteMaximum,
-            weightedAverageAbsolutePrice,
             absoluteMinimumPrice,
         }
     }`, { symbol })).gammaExposure;
@@ -26,7 +25,6 @@ export async function getGammaExposureAggregate(symbol) {
             maximumGammaExposure,
             minimumGammaExposure,
             absoluteMaximum,
-            weightedAverageAbsolutePrice,
             absoluteMinimumPrice,
         }
     }`, { symbol })).gammaExposure;
