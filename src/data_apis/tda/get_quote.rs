@@ -7,7 +7,7 @@ pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
     get_quote_impl(symbol, None).await
 }
 
-pub async fn _get_quote_authenticated(symbol: &str, token: &str) -> anyhow::Result<Quote> {
+pub async fn get_quote_authenticated(symbol: &str, token: &str) -> anyhow::Result<Quote> {
     get_quote_impl(symbol, Some(token)).await
 }
 
@@ -27,8 +27,6 @@ async fn get_quote_impl(symbol: &str, token: Option<&str>) -> anyhow::Result<Quo
     }
 
     let body = request.send().await?.text().await?;
-
-    println!("{}", body);
 
     let quotes: QuoteResponse = serde_json::from_str(&body).map_err(|e| {
         log::error!("{}", e);

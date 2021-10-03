@@ -1,8 +1,67 @@
 use std::collections::HashMap;
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::deserialize_f64_with_nan;
+use crate::{math::bs, types, utils::deserialize_f64_with_nan};
+
+pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<types::OptionInfo>> {
+    get_option_chain_impl(symbol, None).await
+}
+
+pub async fn _get_option_chain_authenticated(
+    symbol: &str,
+    token: &str,
+) -> anyhow::Result<Vec<types::OptionInfo>> {
+    get_option_chain_impl(symbol, Some(token)).await
+}
+
+async fn get_option_chain_impl(
+    symbol: &str,
+    token: Option<&str>,
+) -> anyhow::Result<Vec<types::OptionInfo>> {
+    let mut params = format!("symbol={}", symbol);
+
+    if token.is_none() {
+        let api_key = std::env::var(super::API_KEY_ENV)?;
+        params.push_str(&format!("&apikey={}", api_key));
+    }
+
+    let url = format!("{}/marketdata/chains?{}", super::BASE_URL, params);
+
+    let client = reqwest::Client::new();
+
+    let mut request = client.get(url).header("Accept", "application/json");
+
+    if let Some(token) = token {
+        request = request.header("Authorization", format!("Bearer {}", token));
+    }
+
+    let body = request.send().await?.text().await?;
+
+    let chain: OptionChain = serde_json::from_str(&body).map_err(|e| {
+        log::error!("{}", e);
+        log::error!("{}", &body);
+        e
+    })?;
+
+    let mut result = Vec::new();
+    let price = chain.underlying_price;
+
+    for (_, map) in chain.call_exp_date_map.into_iter() {
+        for (_, options) in map.into_iter() {
+            result.extend(options.into_iter().map(|o| o.into_crate_type(price)));
+        }
+    }
+
+    for (_, map) in chain.put_exp_date_map.into_iter() {
+        for (_, options) in map.into_iter() {
+            result.extend(options.into_iter().map(|o| o.into_crate_type(price)));
+        }
+    }
+
+    Ok(result)
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,6 +109,15 @@ pub enum Strategy {
 pub enum PutOrCall {
     Put,
     Call,
+}
+
+impl From<PutOrCall> for types::OptionType {
+    fn from(pc: PutOrCall) -> Self {
+        match pc {
+            PutOrCall::Put => types::OptionType::Put,
+            PutOrCall::Call => types::OptionType::Call,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -191,4 +259,92 @@ pub struct OptionDeliverables {
     pub asset_type: String,
     pub deliverable_units: String,
     pub currency_type: String,
+}
+
+impl OptionData {
+    pub fn into_crate_type(self, current_price: f64) -> types::OptionInfo {
+        let option_type = self.put_call.into();
+
+        let expiration_time = 180.0;
+        let current_time = 0.0;
+
+        let delta = match option_type {
+            types::OptionType::Call => bs::call_delta,
+            types::OptionType::Put => bs::put_delta,
+        };
+
+        let greeks = types::Greeks {
+            delta: delta(
+                self.volatility,
+                expiration_time,
+                current_time,
+                current_price,
+                self.strike_price,
+            ),
+            gamma: bs::gamma(
+                self.volatility,
+                expiration_time,
+                current_time,
+                current_price,
+                self.strike_price,
+            ),
+            theta: bs::theta(
+                self.volatility,
+                expiration_time,
+                current_time,
+                current_price,
+                self.strike_price,
+            ),
+            vega: bs::vega(
+                self.volatility,
+                expiration_time,
+                current_time,
+                current_price,
+                self.strike_price,
+            ),
+            rho: self.rho,
+            vanna: bs::vanna(
+                self.volatility,
+                expiration_time,
+                current_time,
+                current_price,
+                self.strike_price,
+            ),
+            charm: bs::charm(
+                self.volatility,
+                expiration_time,
+                current_time,
+                current_price,
+                self.strike_price,
+            ),
+        };
+
+        let seconds = self.expiration_date / 1000;
+        let nanos = (self.expiration_date % 1000) * 1000;
+
+        let naive = chrono::NaiveDateTime::from_timestamp(seconds, nanos as u32);
+        let time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+        let expiration_date = time.format("%Y-%m-%dT%H:%M:%S").to_string();
+
+        types::OptionInfo {
+            timestamp: Utc::now().to_rfc3339(),
+            symbol: self.symbol,
+            option_type,
+            strike: self.strike_price,
+            expiration_date,
+            open_interest: self.open_interest as u64,
+            last: self.last_price,
+            change: Some(self.net_change),
+            volume: self.total_volume as u64,
+            open: Some(self.open_price),
+            high: Some(self.high_price),
+            low: Some(self.low_price),
+            close: Some(self.close_price),
+            greeks: Some(greeks),
+            bid_iv: None,
+            mid_iv: Some(self.volatility),
+            ask_iv: None,
+            smv_vol: None,
+        }
+    }
 }

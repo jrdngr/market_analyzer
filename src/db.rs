@@ -1,6 +1,9 @@
 pub mod file;
 
-use crate::{data_apis::tradier, types::OptionInfo};
+use crate::{
+    data_apis::{tda, tradier},
+    types::OptionInfo,
+};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
@@ -69,7 +72,7 @@ pub async fn duration_until_next_check() -> Duration {
 
 pub async fn update_symbol(symbol: &str, db: Arc<Mutex<FileDb>>) -> anyhow::Result<()> {
     log::info!("Updating data for {}", symbol);
-    let option_chain = tradier::get_option_chain(&symbol.to_uppercase()).await?;
+    let option_chain = tda::get_option_chain(&symbol.to_uppercase()).await?;
     let mut db = db.lock().await;
     db.add_option_info(&symbol, option_chain);
     log::info!("Successfully updated data for {}", symbol);
