@@ -74,7 +74,7 @@ impl From<Quote> for types::Quote {
             symbol: quote.symbol,
             last: quote.last,
             change: quote.change,
-            volume: quote.volume,
+            volume: Some(quote.volume),
             open: quote.open,
             high: quote.high,
             low: quote.low,

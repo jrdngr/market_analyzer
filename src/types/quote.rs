@@ -6,7 +6,7 @@ pub struct Quote {
     pub symbol: String,
     pub last: Option<f64>,
     pub change: Option<f64>,
-    pub volume: u64,
+    pub volume: Option<u64>,
     pub open: Option<f64>,
     pub high: Option<f64>,
     pub low: Option<f64>,

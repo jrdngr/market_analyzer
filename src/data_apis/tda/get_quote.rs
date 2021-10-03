@@ -1,19 +1,23 @@
+use std::collections::HashMap;
+
 use crate::types;
 use serde::{Deserialize, Serialize};
 
 pub async fn get_quote(symbol: &str) -> anyhow::Result<QuoteRaw> {
-    let access_token = std::env::var(super::API_KEY_ENV)?;
-    let url = format!("{}/marketdata/{}/quotes", super::BASE_URL, symbol);
+    let api_key = std::env::var(super::API_KEY_ENV)?;
+    let params = format!("?apikey={}", api_key);
+    let url = format!("{}/marketdata/{}/quotes{}", super::BASE_URL, symbol, params);
 
     let client = reqwest::Client::new();
     let body = client
         .get(url)
         .header("Accept", "application/json")
-        .header("Authorization", format!("Bearer {}", access_token))
         .send()
         .await?
         .text()
         .await?;
+
+    println!("{}", body);
 
     let quotes: QuoteResponse = serde_json::from_str(&body).map_err(|e| {
         log::error!("{}", e);
@@ -21,7 +25,35 @@ pub async fn get_quote(symbol: &str) -> anyhow::Result<QuoteRaw> {
         e
     })?;
 
-    Ok(quotes.quotes.quote)
+    let result = quotes.get(symbol).ok_or(anyhow::anyhow!("{} not in result", symbol))?.clone();
+
+    Ok(result)
+}
+
+pub async fn _get_quote_authenticated(symbol: &str, token: &str) -> anyhow::Result<QuoteRaw> {
+    let url = format!("{}/marketdata/{}/quotes", super::BASE_URL, symbol);
+
+    let client = reqwest::Client::new();
+    let body = client
+        .get(url)
+        .header("Accept", "application/json")
+        .header("Authorization", format!("Bearer {}", token))
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{}", body);
+
+    let quotes: QuoteResponse = serde_json::from_str(&body).map_err(|e| {
+        log::error!("{}", e);
+        log::error!("{}", &body);
+        e
+    })?;
+
+    let result = quotes.get(symbol).ok_or(anyhow::anyhow!("{} not in result", symbol))?.clone();
+
+    Ok(result)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -29,12 +61,11 @@ pub async fn get_quote(symbol: &str) -> anyhow::Result<QuoteRaw> {
 pub struct QuoteRaw {
     pub symbol: String,
     pub description: String,
-    pub close_price: f64,
-    pub net_change: f64,
     pub exchange: String,
     pub exchange_name: String,
-    pub total_volume: Option<i32>,
-    pub trade_time_in_long: Option<i32>,
+    pub net_change: Option<f64>,
+    pub total_volume: Option<u64>,
+    pub trade_time_in_long: Option<i64>,
     pub digits: Option<i32>,
     #[serde(rename = "52WkHigh")]
     pub high_52_wk: Option<f64>,
@@ -87,6 +118,7 @@ pub struct QuoteRaw {
     pub underlying: Option<String>,
     pub in_the_money: Option<bool>,
     // Index
+    pub close_price: Option<f64>,
     pub last_price: Option<f64>,
     pub open_price: Option<f64>,
     pub high_price: Option<f64>,
@@ -97,7 +129,7 @@ pub struct QuoteRaw {
     pub ask_price: Option<f64>,
     pub ask_size: Option<i32>,
     pub last_size: Option<f64>,
-    pub quote_time_in_long: Option<i32>,
+    pub quote_time_in_long: Option<i64>,
     pub deliverables: Option<String>,
     pub delta: Option<f64>,
     pub gamma: Option<f64>,
@@ -114,30 +146,30 @@ pub struct QuoteRaw {
     pub regular_market_last_price: Option<f64>,
     pub regular_market_last_size: Option<i32>,
     pub regular_market_net_change: Option<f64>,
-    pub regular_market_trade_time_in_long: Option<i32>,
+    pub regular_market_trade_time_in_long: Option<i64>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-struct QuoteResponse {
-    quotes: QuoteResponseInner,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct QuoteResponseInner {
-    quote: QuoteRaw,
-}
+type QuoteResponse = HashMap<String, QuoteRaw>;
 
 impl From<QuoteRaw> for types::Quote {
     fn from(quote: QuoteRaw) -> Self {
+        let last = quote.last_price.or(quote.regular_market_last_price).or(quote.last_price_in_double);
+        let change = quote.net_change.or(quote.regular_market_net_change).or(quote.change_in_double);
+        let volume = quote.total_volume;
+        let open = quote.open_price.or(quote.open_price_in_double);
+        let high = quote.high_price.or(quote.high_price_in_double);
+        let low = quote.low_price.or(quote.low_price_in_double);
+        let close = quote.close_price.or(quote.close_price_in_double);
+
         Self {
             symbol: quote.symbol,
-            last: quote.last,
-            change: quote.change,
-            volume: quote.volume,
-            open: quote.open,
-            high: quote.high,
-            low: quote.low,
-            close: quote.close,
+            last,
+            change,
+            volume,
+            open,
+            high,
+            low,
+            close,
         }
     }
 }
