@@ -26,9 +26,10 @@
             id: chartId,
             type,
             options: {
-                symbol: searchSymbol,
-                aggregate,
-                fresh,
+                title: searchSymbol,
+                tickers: [{symbol: searchSymbol}],
+                priceLines: [{symbol: searchSymbol, color: "yellow"}],
+                ohlcTicker: {symbol: searchSymbol},
             }
         };
         charts = [ ...charts, chart ];
