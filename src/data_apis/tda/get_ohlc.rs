@@ -1,12 +1,25 @@
-use chrono::{Datelike, Duration, Utc};
+use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::{self as graphql, OhlcInterval};
+use crate::types::{Ohlc, OhlcInterval};
 
-pub async fn get_ohlc(
+pub async fn get_ohlc(symbol: &str, interval: OhlcInterval) -> anyhow::Result<Vec<Ohlc>> {
+    get_ohlc_impl(symbol, interval, None).await
+}
+
+pub async fn _get_ohlc_authenticated(
     symbol: &str,
     interval: OhlcInterval,
-) -> anyhow::Result<Vec<TimeAndSales>> {
+    token: &str,
+) -> anyhow::Result<Vec<Ohlc>> {
+    get_ohlc_impl(symbol, interval, Some(token)).await
+}
+
+async fn get_ohlc_impl(
+    symbol: &str,
+    interval: OhlcInterval,
+    token: Option<&str>,
+) -> anyhow::Result<Vec<Ohlc>> {
     let now = Utc::now() - Duration::hours(4);
 
     let lookback_days = match now.weekday() {
@@ -14,68 +27,85 @@ pub async fn get_ohlc(
         chrono::Weekday::Sat => 4,
         _ => 3,
     };
-    let start = (now - Duration::days(lookback_days))
-        .format("%Y-%m-%d %H:%M")
-        .to_string();
 
-    let access_token = std::env::var(super::API_KEY_ENV)?;
-    let params = format!("symbol={}&interval={}&start={}", symbol, interval, start);
-    let url = format!("{}/markets/timesales?{}", super::BASE_URL, params);
+    let mut params = format!(
+        "period={}&periodType=day&frequency=5&frequencyType=minute",
+        lookback_days
+    );
 
+    if token.is_none() {
+        let api_key = std::env::var(super::API_KEY_ENV)?;
+        params.push_str(&format!("&apikey={}", api_key));
+    }
+
+    let url = format!(
+        "{}/marketdata/{}/pricehistory?{}",
+        super::BASE_URL,
+        symbol,
+        params
+    );
     let client = reqwest::Client::new();
-    let body = client
-        .get(url)
-        .header("Accept", "application/json")
-        .header("Authorization", format!("Bearer {}", access_token))
-        .send()
-        .await?
-        .text()
-        .await?;
 
-    let time_and_sales: TimeAndSalesResponse = serde_json::from_str(&body).map_err(|e| {
+    let mut request = client.get(url).header("Accept", "application/json");
+
+    if let Some(token) = token {
+        request = request.header("Authorization", format!("Bearer {}", token));
+    }
+
+    let body = request.send().await?.text().await?;
+
+    let response: OhlcResponse = serde_json::from_str(&body).map_err(|e| {
         log::error!("{}", e);
         log::error!("{}", &body);
         e
     })?;
 
-    Ok(time_and_sales.series.unwrap_or_default().data)
+    let result = response
+        .candles
+        .into_iter()
+        .map(|c| (interval, c).into())
+        .collect();
+
+    Ok(result)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TimeAndSales {
-    pub time: String,
-    pub timestamp: u64,
-    pub price: f64,
-    pub open: f64,
-    pub high: f64,
-    pub low: f64,
-    pub close: f64,
-    pub volume: u64,
-    pub vwap: Option<f64>,
+pub struct OhlcResponse {
+    pub symbol: String,
+    pub empty: bool,
+    pub candles: Vec<Candle>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-struct TimeAndSalesResponse {
-    series: Option<TimeAndSalesInner>,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Candle {
+    pub open: Option<f64>,
+    pub high: Option<f64>,
+    pub low: Option<f64>,
+    pub close: Option<f64>,
+    pub datetime: Option<i64>,
+    pub volume: Option<i64>,
 }
 
-#[derive(Clone, Default, Debug, Deserialize)]
-struct TimeAndSalesInner {
-    data: Vec<TimeAndSales>,
-}
+impl From<(OhlcInterval, Candle)> for Ohlc {
+    fn from((interval, candle): (OhlcInterval, Candle)) -> Self {
+        let time = candle.datetime.map(|dt| {
+            let seconds = dt / 1000;
+            let nanos = (dt % 1000) * 1000;
 
-impl From<(graphql::OhlcInterval, TimeAndSales)> for graphql::Ohlc {
-    fn from((interval, ts): (graphql::OhlcInterval, TimeAndSales)) -> Self {
+            let naive = chrono::NaiveDateTime::from_timestamp(seconds, nanos as u32);
+            let time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+            time.format("%Y-%m-%dT%H:%M:%S").to_string()
+        });
+
         Self {
             interval,
-            time: ts.time,
-            price: ts.price,
-            open: ts.open,
-            high: ts.high,
-            low: ts.low,
-            close: ts.close,
-            volume: ts.volume,
-            vwap: ts.vwap,
+            time,
+            open: candle.open,
+            high: candle.high,
+            low: candle.low,
+            close: candle.close,
+            volume: candle.volume.map(|v| v as u64),
+            vwap: None,
         }
     }
 }

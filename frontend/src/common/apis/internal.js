@@ -51,13 +51,10 @@ export async function getOhlc(symbol, interval) {
     return (await graphql_request(`query Ohlc($symbol: String!, $interval: String = "5min"){
         ohlc(symbol: $symbol, interval: $interval) {
             time,
-            price,
             open,
             high,
             low,
             close,
-            volume,
-            vwap,
         }
     }`, { symbol, interval })).ohlc
 }

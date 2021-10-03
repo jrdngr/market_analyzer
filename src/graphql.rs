@@ -5,7 +5,7 @@ use crate::{
         gamma_exposure::{gamma_exposure, gamma_exposure_aggregate},
         option_stats::option_stats,
     },
-    data_apis::{tradier, tda},
+    data_apis::{tda, tradier},
     db::{self, FileDb},
     types::{stats::StrikeStats, GammaExposureStats, Ohlc, OhlcInterval, Quote},
 };
@@ -124,12 +124,12 @@ pub fn tda_schema(db: Arc<Mutex<FileDb>>) -> TdaSchema {
 
 pub struct TdaRoot;
 
- #[Object]
+#[Object]
 impl TdaRoot {
     async fn quote(&self, symbol: String) -> anyhow::Result<Quote> {
         log::info!("Querying quote");
         let quote = tda::get_quote(&symbol).await.map_err(log_error)?;
-        Ok(quote.into())
+        Ok(quote)
     }
 
     async fn ohlc(
@@ -138,11 +138,8 @@ impl TdaRoot {
         #[graphql(default_with = "default_interval()")] interval: OhlcInterval,
     ) -> anyhow::Result<Vec<Ohlc>> {
         log::info!("Querying ohlc");
-        let ohlc = tda::get_ohlc(&symbol, interval)
-            .await
-            .map_err(log_error)?;
-        let result = ohlc.into_iter().map(|ts| (interval, ts).into()).collect();
-        Ok(result)
+        let ohlc = tda::get_ohlc(&symbol, interval).await.map_err(log_error)?;
+        Ok(ohlc)
     }
 
     async fn symbols(&self, context: &Context<'_>) -> anyhow::Result<Vec<String>> {

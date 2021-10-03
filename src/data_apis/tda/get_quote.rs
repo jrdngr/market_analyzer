@@ -1,47 +1,32 @@
 use std::collections::HashMap;
 
-use crate::types;
+use crate::types::Quote;
 use serde::{Deserialize, Serialize};
 
-pub async fn get_quote(symbol: &str) -> anyhow::Result<QuoteRaw> {
-    let api_key = std::env::var(super::API_KEY_ENV)?;
-    let params = format!("?apikey={}", api_key);
-    let url = format!("{}/marketdata/{}/quotes{}", super::BASE_URL, symbol, params);
-
-    let client = reqwest::Client::new();
-    let body = client
-        .get(url)
-        .header("Accept", "application/json")
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    println!("{}", body);
-
-    let quotes: QuoteResponse = serde_json::from_str(&body).map_err(|e| {
-        log::error!("{}", e);
-        log::error!("{}", &body);
-        e
-    })?;
-
-    let result = quotes.get(symbol).ok_or(anyhow::anyhow!("{} not in result", symbol))?.clone();
-
-    Ok(result)
+pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
+    get_quote_impl(symbol, None).await
 }
 
-pub async fn _get_quote_authenticated(symbol: &str, token: &str) -> anyhow::Result<QuoteRaw> {
-    let url = format!("{}/marketdata/{}/quotes", super::BASE_URL, symbol);
+pub async fn _get_quote_authenticated(symbol: &str, token: &str) -> anyhow::Result<Quote> {
+    get_quote_impl(symbol, Some(token)).await
+}
+
+async fn get_quote_impl(symbol: &str, token: Option<&str>) -> anyhow::Result<Quote> {
+    let mut url = format!("{}/marketdata/{}/quotes", super::BASE_URL, symbol);
+    if token.is_none() {
+        let api_key = std::env::var(super::API_KEY_ENV)?;
+        url = format!("{}?apikey={}", url, api_key);
+    }
 
     let client = reqwest::Client::new();
-    let body = client
-        .get(url)
-        .header("Accept", "application/json")
-        .header("Authorization", format!("Bearer {}", token))
-        .send()
-        .await?
-        .text()
-        .await?;
+
+    let mut request = client.get(url).header("Accept", "application/json");
+
+    if let Some(token) = token {
+        request = request.header("Authorization", format!("Bearer {}", token));
+    }
+
+    let body = request.send().await?.text().await?;
 
     println!("{}", body);
 
@@ -51,9 +36,12 @@ pub async fn _get_quote_authenticated(symbol: &str, token: &str) -> anyhow::Resu
         e
     })?;
 
-    let result = quotes.get(symbol).ok_or(anyhow::anyhow!("{} not in result", symbol))?.clone();
+    let result = quotes
+        .get(symbol)
+        .ok_or_else(|| anyhow::anyhow!("{} not in result", symbol))?
+        .clone();
 
-    Ok(result)
+    Ok(result.into())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -151,10 +139,16 @@ pub struct QuoteRaw {
 
 type QuoteResponse = HashMap<String, QuoteRaw>;
 
-impl From<QuoteRaw> for types::Quote {
+impl From<QuoteRaw> for Quote {
     fn from(quote: QuoteRaw) -> Self {
-        let last = quote.last_price.or(quote.regular_market_last_price).or(quote.last_price_in_double);
-        let change = quote.net_change.or(quote.regular_market_net_change).or(quote.change_in_double);
+        let last = quote
+            .last_price
+            .or(quote.regular_market_last_price)
+            .or(quote.last_price_in_double);
+        let change = quote
+            .net_change
+            .or(quote.regular_market_net_change)
+            .or(quote.change_in_double);
         let volume = quote.total_volume;
         let open = quote.open_price.or(quote.open_price_in_double);
         let high = quote.high_price.or(quote.high_price_in_double);

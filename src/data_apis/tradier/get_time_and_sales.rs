@@ -68,13 +68,12 @@ impl From<(graphql::OhlcInterval, TimeAndSales)> for graphql::Ohlc {
     fn from((interval, ts): (graphql::OhlcInterval, TimeAndSales)) -> Self {
         Self {
             interval,
-            time: ts.time,
-            price: ts.price,
-            open: ts.open,
-            high: ts.high,
-            low: ts.low,
-            close: ts.close,
-            volume: ts.volume,
+            time: Some(ts.time),
+            open: Some(ts.open),
+            high: Some(ts.high),
+            low: Some(ts.low),
+            close: Some(ts.close),
+            volume: Some(ts.volume),
             vwap: ts.vwap,
         }
     }

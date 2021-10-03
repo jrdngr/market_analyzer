@@ -6,13 +6,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct Ohlc {
     pub interval: OhlcInterval,
-    pub time: String,
-    pub price: f64,
-    pub open: f64,
-    pub high: f64,
-    pub low: f64,
-    pub close: f64,
-    pub volume: u64,
+    pub time: Option<String>,
+    pub open: Option<f64>,
+    pub high: Option<f64>,
+    pub low: Option<f64>,
+    pub close: Option<f64>,
+    pub volume: Option<u64>,
     pub vwap: Option<f64>,
 }
 

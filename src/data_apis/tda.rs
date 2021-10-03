@@ -2,9 +2,9 @@ mod get_ohlc;
 mod get_quote;
 mod options;
 
-pub use options::*;
 pub use get_ohlc::get_ohlc;
 pub use get_quote::get_quote;
+pub use options::*;
 
 use std::path::Path;
 
