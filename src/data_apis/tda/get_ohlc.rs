@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Duration, Utc};
+use chrono::{DateTime, Datelike, Duration, FixedOffset, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::types::{Ohlc, OhlcInterval};
@@ -23,9 +23,9 @@ async fn get_ohlc_impl(
     let now = Utc::now() - Duration::hours(4);
 
     let lookback_days = match now.weekday() {
-        chrono::Weekday::Sun => 5,
-        chrono::Weekday::Sat => 4,
-        _ => 3,
+        chrono::Weekday::Sun => 3,
+        chrono::Weekday::Sat => 2,
+        _ => 1,
     };
 
     let mut params = format!(
@@ -93,7 +93,9 @@ impl From<(OhlcInterval, Candle)> for Ohlc {
             let nanos = (dt % 1000) * 1000;
 
             let naive = chrono::NaiveDateTime::from_timestamp(seconds, nanos as u32);
-            let time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+            let utc_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+            let ny_offset = FixedOffset::east(5 * 3600);
+            let time: DateTime<FixedOffset> = utc_time.with_timezone(&ny_offset);
             time.format("%Y-%m-%dT%H:%M:%S").to_string()
         });
 
