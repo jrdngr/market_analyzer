@@ -2,6 +2,7 @@
     import { Router, Route } from "svelte-routing";
     import Charts from './components/Charts.svelte';
     import Dashboard from './components/Dashboard.svelte';
+    import Auth from './components/Auth.svelte';
     import { clientIdUrl } from './common/apis/td';
 
     export let url = "";
@@ -17,8 +18,11 @@
     <div>
         <Route path="/" component="{Dashboard}" />
         <Route path="/search" component="{Charts}" />
+        <Route path="/auth" component="{Auth}" />
     </div>
 </Router>
+
+<button on:click={handleLogin}>TDA Login</button>
 
 <style>
 </style>

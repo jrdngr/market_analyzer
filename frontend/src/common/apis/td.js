@@ -66,8 +66,11 @@ export async function login(code) {
     });
 
     const result = await response.json();
+    console.log(result);
     storeAccessToken(result.access_token);
     storeRefreshToken(result.refresh_token);
+
+    console.log("Logged in to TDA!");
     
     return result;
 }
