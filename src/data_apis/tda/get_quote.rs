@@ -3,15 +3,7 @@ use std::collections::HashMap;
 use crate::types::Quote;
 use serde::{Deserialize, Serialize};
 
-pub async fn get_quote(symbol: &str) -> anyhow::Result<Quote> {
-    get_quote_impl(symbol, None).await
-}
-
-pub async fn get_quote_authenticated(symbol: &str, token: &str) -> anyhow::Result<Quote> {
-    get_quote_impl(symbol, Some(token)).await
-}
-
-async fn get_quote_impl(symbol: &str, token: Option<&str>) -> anyhow::Result<Quote> {
+pub async fn get_quote(symbol: &str, token: Option<String>) -> anyhow::Result<Quote> {
     let mut url = format!("{}/marketdata/{}/quotes", super::BASE_URL, symbol);
     if token.is_none() {
         let api_key = std::env::var(super::API_KEY_ENV)?;

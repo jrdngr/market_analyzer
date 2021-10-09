@@ -37,8 +37,8 @@ async fn main() -> anyhow::Result<()> {
     db::start_db_update_loop(db.clone())?;
 
     let graphql_filter = warp::path("graphql").and(
-        async_graphql_warp::graphql(graphql::tda_schema(db.clone())).and_then(
-            |(schema, request): (graphql::TdaSchema, async_graphql::Request)| async move {
+        async_graphql_warp::graphql(graphql::schema(db.clone())).and_then(
+            |(schema, request): (graphql::Schema, async_graphql::Request)| async move {
                 let resp = schema.execute(request).await;
                 Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
             },
@@ -48,9 +48,7 @@ async fn main() -> anyhow::Result<()> {
     let graphql_playground = warp::path("playground").and(warp::get()).map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body(playground_source(GraphQLPlaygroundConfig::new(
-                "/graphql",
-            )))
+            .body(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
     });
 
     let cors = warp::cors()

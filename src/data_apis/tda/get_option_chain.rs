@@ -5,20 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{math::bs, types, utils::deserialize_f64_with_nan};
 
-pub async fn get_option_chain(symbol: &str) -> anyhow::Result<Vec<types::OptionInfo>> {
-    get_option_chain_impl(symbol, None).await
-}
-
-pub async fn _get_option_chain_authenticated(
+pub async fn get_option_chain(
     symbol: &str,
-    token: &str,
-) -> anyhow::Result<Vec<types::OptionInfo>> {
-    get_option_chain_impl(symbol, Some(token)).await
-}
-
-async fn get_option_chain_impl(
-    symbol: &str,
-    token: Option<&str>,
+    token: Option<String>,
 ) -> anyhow::Result<Vec<types::OptionInfo>> {
     let mut params = format!("symbol={}", symbol);
 

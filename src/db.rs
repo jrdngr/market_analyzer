@@ -9,14 +9,18 @@ use tokio::sync::Mutex;
 
 pub use file::FileDb;
 
-pub async fn option_chain(symbol: &str, db: Arc<Mutex<FileDb>>) -> anyhow::Result<Vec<OptionInfo>> {
+pub async fn option_chain(
+    symbol: &str,
+    db: Arc<Mutex<FileDb>>,
+    token: Option<String>,
+) -> anyhow::Result<Vec<OptionInfo>> {
     let has_symbol = {
         let db = db.lock().await;
         db.has_symbol(symbol)
     };
 
     if !has_symbol {
-        update_symbol(symbol, db.clone()).await?;
+        update_symbol(symbol, db.clone(), token).await?;
     }
 
     let db = db.lock().await;
@@ -40,7 +44,7 @@ pub fn start_db_update_loop(db: Arc<Mutex<FileDb>>) -> anyhow::Result<()> {
 
             for symbol in symbols {
                 symbol_delay.tick().await;
-                if let Err(e) = update_symbol(&symbol, db.clone()).await {
+                if let Err(e) = update_symbol(&symbol, db.clone(), None).await {
                     log::error!("{}", e);
                 }
             }
@@ -70,9 +74,13 @@ pub async fn duration_until_next_check() -> Duration {
     Duration::from_secs(next_check_seconds)
 }
 
-pub async fn update_symbol(symbol: &str, db: Arc<Mutex<FileDb>>) -> anyhow::Result<()> {
+pub async fn update_symbol(
+    symbol: &str,
+    db: Arc<Mutex<FileDb>>,
+    token: Option<String>,
+) -> anyhow::Result<()> {
     log::info!("Updating data for {}", symbol);
-    let option_chain = tda::get_option_chain(&symbol.to_uppercase()).await?;
+    let option_chain = tda::get_option_chain(&symbol.to_uppercase(), token).await?;
     let mut db = db.lock().await;
     db.add_option_info(&symbol, option_chain);
     log::info!("Successfully updated data for {}", symbol);

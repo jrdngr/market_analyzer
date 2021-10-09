@@ -3,22 +3,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::{Ohlc, OhlcInterval};
 
-pub async fn get_ohlc(symbol: &str, interval: OhlcInterval) -> anyhow::Result<Vec<Ohlc>> {
-    get_ohlc_impl(symbol, interval, None).await
-}
-
-pub async fn _get_ohlc_authenticated(
+pub async fn get_ohlc(
     symbol: &str,
     interval: OhlcInterval,
-    token: &str,
-) -> anyhow::Result<Vec<Ohlc>> {
-    get_ohlc_impl(symbol, interval, Some(token)).await
-}
-
-async fn get_ohlc_impl(
-    symbol: &str,
-    interval: OhlcInterval,
-    token: Option<&str>,
+    token: Option<String>,
 ) -> anyhow::Result<Vec<Ohlc>> {
     let now = Utc::now() - Duration::hours(4);
 
