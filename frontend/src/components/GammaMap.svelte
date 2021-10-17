@@ -30,7 +30,7 @@ import { quantileSorted } from 'd3-array';
     let minPriceIndex = options.startStrike;
     let maxPriceIndex = options.endStrike;
     let strikes = [0, 1];
-    let brightness = 3;
+    let brightness = 5;
     let highlightStrikes = true;
     let showGradient = false;
     let flipColors = false;
