@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use sqlx::postgres::types::PgMoney;
+use rust_decimal::Decimal;
 
 use crate::types::OptionType;
 
@@ -9,16 +9,16 @@ pub struct OptionInfo {
     pub symbol: String,
     pub timestamp: DateTime<Utc>,
     pub option_type: String,
-    pub strike: PgMoney,
+    pub strike: Decimal,
     pub expiration_date: DateTime<Utc>,
     pub open_interest: Option<i64>,
     pub volume: Option<i64>,
-    pub last: Option<PgMoney>,
-    pub open: Option<PgMoney>,
-    pub high: Option<PgMoney>,
-    pub low: Option<PgMoney>,
-    pub close: Option<PgMoney>,
+    pub last: Option<Decimal>,
+    pub open: Option<Decimal>,
+    pub high: Option<Decimal>,
+    pub low: Option<Decimal>,
+    pub close: Option<Decimal>,
     pub change: Option<f64>,
-    pub underlying_price: Option<PgMoney>,
+    pub underlying_price: Option<Decimal>,
     pub implied_volatility: Option<f64>,
 }
