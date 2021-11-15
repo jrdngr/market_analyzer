@@ -36,12 +36,12 @@ import { quantileSorted } from 'd3-array';
     let flipColors = false;
 
     let startDate = new Date();
-    startDate.setHours(5);
+    startDate.setHours(4);
     startDate.setMinutes(30);
     startDate.setMilliseconds(0);
   
     let endDate = new Date();
-    endDate.setHours(12);
+    endDate.setHours(11);
     endDate.setMinutes(0);
     endDate.setMilliseconds(0);
 
