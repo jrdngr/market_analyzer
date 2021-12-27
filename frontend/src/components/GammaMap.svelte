@@ -95,7 +95,7 @@ import { quantileSorted } from 'd3-array';
             const ohlc = await getOhlcData();
             data.ohlc = ohlc;
             setData();
-        }, 5 * 60_000);
+        }, 30_000);
 
         setInterval(async () => {
             let gexData = await getGexData();

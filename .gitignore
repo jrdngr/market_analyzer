@@ -1,5 +1,5 @@
 /data
 /target
 /local
-.env
+*.env
 Cargo.lock
