@@ -6,9 +6,11 @@ export const DEFAULT_ROWS = [
                 {
                     symbol: "SPY",
                     multiplier: 10,
+                    step: 5,
                 }, 
                 {
                     symbol: "SPX",
+                    step: 5,
                 },
             ],
             priceLines: [
@@ -33,9 +35,11 @@ export const DEFAULT_ROWS = [
                 {
                     symbol: "QQQ",
                     multiplier: 41,
+                    step: 5,
                 }, 
                 {
                     symbol: "NDX",
+                    step: 5,
                 },
             ],
             priceLines: [

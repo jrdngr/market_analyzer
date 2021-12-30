@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import GammaMapChart from './charts/GammaMapChart.svelte'
     import { getGammaExposure, getOhlc, getQuote } from '../common/apis/internal';
-import { quantileSorted } from 'd3-array';
+    import { roundToStep } from '../common/utils';
 
     export let options = {
         tickers: null,
@@ -113,21 +113,15 @@ import { quantileSorted } from 'd3-array';
         let gexData = null;
         for (const ticker of options.tickers) {
             let tickerGex = await getGammaExposure(ticker.symbol);
-            if (!gexData) {
-                gexData = tickerGex;
-                if (ticker.multiplier) {
-                    for (let price of gexData.prices) {
-                        let strike = parseFloat(price.strike);
-                        strike *= ticker.multiplier;
-                        price.strike = strike.toString();
-                    }
-                }
-            } else {
+            if (gexData) {
                 // Update Strikes
                 for (let price of tickerGex.prices) {
                     if (ticker.multiplier) {
                         let strike = parseFloat(price.strike);
                         strike *= ticker.multiplier;
+                        if (ticker.step) {
+                            strike = roundToStep(strike, ticker.step);
+                        }
                         price.strike = strike.toString();
                     }
                     for (const gexPrice of gexData.prices) {
@@ -153,6 +147,18 @@ import { quantileSorted } from 'd3-array';
                 gexData.maximumGammaExposure = Math.max(gexData.maximumGammaExposure, tickerGex.maximumGammaExposure);
                 gexData.minimumGammaExposure = Math.max(gexData.minimumGammaExposure, tickerGex.minimumGammaExposure);
                 gexData.weightedAverageAbsolutePrice = Math.max(gexData.weightedAverageAbsolutePrice, tickerGex.weightedAverageAbsolutePrice);
+            } else {
+                gexData = tickerGex;
+                if (ticker.multiplier) {
+                    for (let price of gexData.prices) {
+                        let strike = parseFloat(price.strike);
+                        strike *= ticker.multiplier;
+                        if (ticker.step) {
+                            strike = roundToStep(strike, ticker.step);
+                        }
+                        price.strike = strike.toString();
+                    }
+                }
             }
         }
 
