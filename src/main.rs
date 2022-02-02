@@ -63,7 +63,9 @@ async fn main() -> anyhow::Result<()> {
     let tda_graphql_playground = warp::path("tdaplayground").and(warp::get()).map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body(playground_source(GraphQLPlaygroundConfig::new("/tdagraphql")))
+            .body(playground_source(GraphQLPlaygroundConfig::new(
+                "/tdagraphql",
+            )))
     });
 
     let cors = warp::cors()

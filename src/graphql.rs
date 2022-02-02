@@ -124,7 +124,7 @@ pub fn tda_schema(db: Arc<Mutex<FileDb>>) -> TdaSchema {
 
 pub struct TdaRoot;
 
- #[Object]
+#[Object]
 impl TdaRoot {
     async fn quote(&self, symbol: String) -> anyhow::Result<Quote> {
         log::info!("Querying quote");

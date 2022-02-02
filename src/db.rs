@@ -62,9 +62,16 @@ pub async fn duration_until_next_check() -> Duration {
             return Duration::from_secs(60 * 60);
         }
     };
-    let next_check_minutes = 0.max(clock.next_change_minutes - 60) as u64;
-    let next_check_seconds = next_check_minutes * 60;
-    Duration::from_secs(next_check_seconds)
+
+    use crate::types::clock::MarketState::*;
+    match clock.state {
+        Open => Duration::from_secs(60 * 60),
+        _ => {
+            let next_check_minutes = 0.max(clock.next_change_minutes) as u64;
+            let next_check_seconds = next_check_minutes * 60;
+            Duration::from_secs(next_check_seconds)
+        }
+    }
 }
 
 pub async fn update_symbol(symbol: &str, db: Arc<Mutex<FileDb>>) -> anyhow::Result<()> {

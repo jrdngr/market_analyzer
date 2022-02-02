@@ -30,7 +30,7 @@
     let minPriceIndex = options.startStrike;
     let maxPriceIndex = options.endStrike;
     let strikes = [0, 1];
-    let brightness = 5;
+    let brightness = 10;
     let highlightStrikes = true;
     let showGradient = false;
     let flipColors = false;
