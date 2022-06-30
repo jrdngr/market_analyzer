@@ -1,4 +1,6 @@
 pub mod file;
+pub mod postgres;
+pub mod types;
 
 use crate::{data_apis::tradier, types::OptionInfo};
 use std::{sync::Arc, time::Duration};

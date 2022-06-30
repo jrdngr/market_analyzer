@@ -25,6 +25,9 @@ async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     pretty_env_logger::init();
 
+    let mut pgdb = db::postgres::PostgresDb::new().await?;
+    pgdb.test().await?;
+
     let frontend = warp::fs::dir("frontend/public");
     let db_download = warp::path("db").and(warp::fs::file("data/db.gz"));
 
